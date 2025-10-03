@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 대시보드와 KPI</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 대시보드와 KPI 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. KPI (핵심 성과 지표) 표시
+            2. 대시보드 레이아웃 설계
+            3. 실시간 데이터 모니터링
+            4. 위젯 기반 인터페이스
+            5. 데이터 시각화
+            6. 알림과 경고 시스템
+            7. 사용자 맞춤형 대시보드
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 데이터셋 설정 =====
+            */
+            
+            // KPI 데이터셋
+            var kpiDataset = new nexacro.Dataset("kpiDataset");
+            kpiDataset.addColumn("kpiId", "number");
+            kpiDataset.addColumn("name", "string");
+            kpiDataset.addColumn("currentValue", "number");
+            kpiDataset.addColumn("targetValue", "number");
+            kpiDataset.addColumn("unit", "string");
+            kpiDataset.addColumn("trend", "string");
+            kpiDataset.addColumn("status", "string");
+            kpiDataset.addColumn("lastUpdate", "string");
+            
+            // 실시간 데이터
+            var realtimeDataset = new nexacro.Dataset("realtimeDataset");
+            realtimeDataset.addColumn("time", "string");
+            realtimeDataset.addColumn("value", "number");
+            realtimeDataset.addColumn("category", "string");
+            
+            // 샘플 KPI 데이터
+            var sampleKPIs = [
+                {kpiId: 1, name: "월 매출", currentValue: 25000000, targetValue: 30000000, unit: "원", trend: "상승", status: "양호", lastUpdate: "2024-01-20 14:30"},
+                {kpiId: 2, name: "신규 고객", currentValue: 150, targetValue: 200, unit: "명", trend: "하락", status: "주의", lastUpdate: "2024-01-20 14:25"},
+                {kpiId: 3, name: "고객 만족도", currentValue: 4.2, targetValue: 4.5, unit: "점", trend: "상승", status: "양호", lastUpdate: "2024-01-20 14:20"},
+                {kpiId: 4, name: "주문 처리율", currentValue: 95, targetValue: 98, unit: "%", trend: "하락", status: "경고", lastUpdate: "2024-01-20 14:15"},
+                {kpiId: 5, name: "재고 회전율", currentValue: 8.5, targetValue: 10, unit: "회", trend: "상승", status: "양호", lastUpdate: "2024-01-20 14:10"},
+                {kpiId: 6, name: "직원 만족도", currentValue: 3.8, targetValue: 4.0, unit: "점", trend: "상승", status: "주의", lastUpdate: "2024-01-20 14:05"}
+            ];
+            
+            // KPI 데이터 추가
+            for (var i = 0; i < sampleKPIs.length; i++) {
+                var kpi = sampleKPIs[i];
+                var newRow = kpiDataset.addRow();
+                kpiDataset.setCellData(newRow, "kpiId", kpi.kpiId);
+                kpiDataset.setCellData(newRow, "name", kpi.name);
+                kpiDataset.setCellData(newRow, "currentValue", kpi.currentValue);
+                kpiDataset.setCellData(newRow, "targetValue", kpi.targetValue);
+                kpiDataset.setCellData(newRow, "unit", kpi.unit);
+                kpiDataset.setCellData(newRow, "trend", kpi.trend);
+                kpiDataset.setCellData(newRow, "status", kpi.status);
+                kpiDataset.setCellData(newRow, "lastUpdate", kpi.lastUpdate);
+            }
+            
+            /*
+                ===== 2단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("대시보드와 KPI - 경영 현황 모니터링");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(800);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            titleLabel.set_background("lightblue");
+            
+            // 새로고침 버튼
+            var refreshButton = new nexacro.Button("refreshButton");
+            refreshButton.set_text("새로고침");
+            refreshButton.set_left(870);
+            refreshButton.set_top(20);
+            refreshButton.set_width(100);
+            refreshButton.set_height(40);
+            refreshButton.set_background("lightgreen");
+            
+            // 메인 컨테이너
+            var mainContainer = new nexacro.Container("mainContainer");
+            mainContainer.set_left(50);
+            mainContainer.set_top(70);
+            mainContainer.set_width(1000);
+            mainContainer.set_height(600);
+            mainContainer.set_background("lightgray");
+            mainContainer.set_border("2px solid #ccc");
+            
+            /*
+                ===== 3단계: KPI 위젯들 만들기 =====
+            */
+            
+            // KPI 위젯 1 - 월 매출
+            var kpiWidget1 = new nexacro.Container("kpiWidget1");
+            kpiWidget1.set_left(20);
+            kpiWidget1.set_top(20);
+            kpiWidget1.set_width(200);
+            kpiWidget1.set_height(120);
+            kpiWidget1.set_background("white");
+            kpiWidget1.set_border("2px solid #4CAF50");
+            
+            var kpi1Title = new nexacro.Label("kpi1Title");
+            kpi1Title.set_text("월 매출");
+            kpi1Title.set_left(10);
+            kpi1Title.set_top(10);
+            kpi1Title.set_width(180);
+            kpi1Title.set_height(25);
+            kpi1Title.set_font("bold 14px Arial");
+            kpi1Title.set_color("darkgreen");
+            
+            var kpi1Value = new nexacro.Label("kpi1Value");
+            kpi1Value.set_text("25,000,000원");
+            kpi1Value.set_left(10);
+            kpi1Value.set_top(40);
+            kpi1Value.set_width(180);
+            kpi1Value.set_height(30);
+            kpi1Value.set_font("bold 18px Arial");
+            kpi1Value.set_color("darkgreen");
+            
+            var kpi1Target = new nexacro.Label("kpi1Target");
+            kpi1Target.set_text("목표: 30,000,000원 (83%)");
+            kpi1Target.set_left(10);
+            kpi1Target.set_top(75);
+            kpi1Target.set_width(180);
+            kpi1Target.set_height(20);
+            kpi1Target.set_font("12px Arial");
+            kpi1Target.set_color("gray");
+            
+            var kpi1Trend = new nexacro.Label("kpi1Trend");
+            kpi1Trend.set_text("📈 상승");
+            kpi1Trend.set_left(10);
+            kpi1Trend.set_top(95);
+            kpi1Trend.set_width(180);
+            kpi1Trend.set_height(20);
+            kpi1Trend.set_font("12px Arial");
+            kpi1Trend.set_color("green");
+            
+            // KPI 위젯 2 - 신규 고객
+            var kpiWidget2 = new nexacro.Container("kpiWidget2");
+            kpiWidget2.set_left(240);
+            kpiWidget2.set_top(20);
+            kpiWidget2.set_width(200);
+            kpiWidget2.set_height(120);
+            kpiWidget2.set_background("white");
+            kpiWidget2.set_border("2px solid #FF9800");
+            
+            var kpi2Title = new nexacro.Label("kpi2Title");
+            kpi2Title.set_text("신규 고객");
+            kpi2Title.set_left(10);
+            kpi2Title.set_top(10);
+            kpi2Title.set_width(180);
+            kpi2Title.set_height(25);
+            kpi2Title.set_font("bold 14px Arial");
+            kpi2Title.set_color("darkorange");
+            
+            var kpi2Value = new nexacro.Label("kpi2Value");
+            kpi2Value.set_text("150명");
+            kpi2Value.set_left(10);
+            kpi2Value.set_top(40);
+            kpi2Value.set_width(180);
+            kpi2Value.set_height(30);
+            kpi2Value.set_font("bold 18px Arial");
+            kpi2Value.set_color("darkorange");
+            
+            var kpi2Target = new nexacro.Label("kpi2Target");
+            kpi2Target.set_text("목표: 200명 (75%)");
+            kpi2Target.set_left(10);
+            kpi2Target.set_top(75);
+            kpi2Target.set_width(180);
+            kpi2Target.set_height(20);
+            kpi2Target.set_font("12px Arial");
+            kpi2Target.set_color("gray");
+            
+            var kpi2Trend = new nexacro.Label("kpi2Trend");
+            kpi2Trend.set_text("📉 하락");
+            kpi2Trend.set_left(10);
+            kpi2Trend.set_top(95);
+            kpi2Trend.set_width(180);
+            kpi2Trend.set_height(20);
+            kpi2Trend.set_font("12px Arial");
+            kpi2Trend.set_color("red");
+            
+            // KPI 위젯 3 - 고객 만족도
+            var kpiWidget3 = new nexacro.Container("kpiWidget3");
+            kpiWidget3.set_left(460);
+            kpiWidget3.set_top(20);
+            kpiWidget3.set_width(200);
+            kpiWidget3.set_height(120);
+            kpiWidget3.set_background("white");
+            kpiWidget3.set_border("2px solid #2196F3");
+            
+            var kpi3Title = new nexacro.Label("kpi3Title");
+            kpi3Title.set_text("고객 만족도");
+            kpi3Title.set_left(10);
+            kpi3Title.set_top(10);
+            kpi3Title.set_width(180);
+            kpi3Title.set_height(25);
+            kpi3Title.set_font("bold 14px Arial");
+            kpi3Title.set_color("darkblue");
+            
+            var kpi3Value = new nexacro.Label("kpi3Value");
+            kpi3Value.set_text("4.2점");
+            kpi3Value.set_left(10);
+            kpi3Value.set_top(40);
+            kpi3Value.set_width(180);
+            kpi3Value.set_height(30);
+            kpi3Value.set_font("bold 18px Arial");
+            kpi3Value.set_color("darkblue");
+            
+            var kpi3Target = new nexacro.Label("kpi3Target");
+            kpi3Target.set_text("목표: 4.5점 (93%)");
+            kpi3Target.set_left(10);
+            kpi3Target.set_top(75);
+            kpi3Target.set_width(180);
+            kpi3Target.set_height(20);
+            kpi3Target.set_font("12px Arial");
+            kpi3Target.set_color("gray");
+            
+            var kpi3Trend = new nexacro.Label("kpi3Trend");
+            kpi3Trend.set_text("📈 상승");
+            kpi3Trend.set_left(10);
+            kpi3Trend.set_top(95);
+            kpi3Trend.set_width(180);
+            kpi3Trend.set_height(20);
+            kpi3Trend.set_font("12px Arial");
+            kpi3Trend.set_color("green");
+            
+            // KPI 위젯 4 - 주문 처리율
+            var kpiWidget4 = new nexacro.Container("kpiWidget4");
+            kpiWidget4.set_left(680);
+            kpiWidget4.set_top(20);
+            kpiWidget4.set_width(200);
+            kpiWidget4.set_height(120);
+            kpiWidget4.set_background("white");
+            kpiWidget4.set_border("2px solid #F44336");
+            
+            var kpi4Title = new nexacro.Label("kpi4Title");
+            kpi4Title.set_text("주문 처리율");
+            kpi4Title.set_left(10);
+            kpi4Title.set_top(10);
+            kpi4Title.set_width(180);
+            kpi4Title.set_height(25);
+            kpi4Title.set_font("bold 14px Arial");
+            kpi4Title.set_color("darkred");
+            
+            var kpi4Value = new nexacro.Label("kpi4Value");
+            kpi4Value.set_text("95%");
+            kpi4Value.set_left(10);
+            kpi4Value.set_top(40);
+            kpi4Value.set_width(180);
+            kpi4Value.set_height(30);
+            kpi4Value.set_font("bold 18px Arial");
+            kpi4Value.set_color("darkred");
+            
+            var kpi4Target = new nexacro.Label("kpi4Target");
+            kpi4Target.set_text("목표: 98% (97%)");
+            kpi4Target.set_left(10);
+            kpi4Target.set_top(75);
+            kpi4Target.set_width(180);
+            kpi4Target.set_height(20);
+            kpi4Target.set_font("12px Arial");
+            kpi4Target.set_color("gray");
+            
+            var kpi4Trend = new nexacro.Label("kpi4Trend");
+            kpi4Trend.set_text("📉 하락");
+            kpi4Trend.set_left(10);
+            kpi4Trend.set_top(95);
+            kpi4Trend.set_width(180);
+            kpi4Trend.set_height(20);
+            kpi4Trend.set_font("12px Arial");
+            kpi4Trend.set_color("red");
+            
+            /*
+                ===== 4단계: 차트 위젯들 만들기 =====
+            */
+            
+            // 매출 추이 차트
+            var chartWidget1 = new nexacro.Container("chartWidget1");
+            chartWidget1.set_left(20);
+            chartWidget1.set_top(160);
+            chartWidget1.set_width(400);
+            chartWidget1.set_height(200);
+            chartWidget1.set_background("white");
+            chartWidget1.set_border("1px solid #ccc");
+            
+            var chart1Title = new nexacro.Label("chart1Title");
+            chart1Title.set_text("📊 월별 매출 추이");
+            chart1Title.set_left(10);
+            chart1Title.set_top(10);
+            chart1Title.set_width(380);
+            chart1Title.set_height(25);
+            chart1Title.set_font("bold 14px Arial");
+            chart1Title.set_background("lightblue");
+            
+            var chart1Area = new nexacro.Label("chart1Area");
+            chart1Area.set_text("📈 매출 추이 차트\n\n" +
+                              "1월: ████████████ 1,200만원\n" +
+                              "2월: ████████████████ 1,500만원\n" +
+                              "3월: ████████████████████ 1,800만원\n" +
+                              "4월: ██████████████████ 1,600만원\n" +
+                              "5월: ███████████████████████ 2,000만원\n" +
+                              "6월: ██████████████████████████ 2,200만원\n" +
+                              "7월: █████████████████████ 1,900만원\n" +
+                              "8월: ███████████████████████ 2,100만원\n" +
+                              "9월: ██████████████████████████ 2,300만원\n" +
+                              "10월: ████████████████████████████ 2,500만원");
+            chart1Area.set_left(10);
+            chart1Area.set_top(40);
+            chart1Area.set_width(380);
+            chart1Area.set_height(150);
+            chart1Area.set_background("lightyellow");
+            chart1Area.set_border("1px solid #ccc");
+            chart1Area.set_font("12px Arial");
+            
+            // 고객 분석 차트
+            var chartWidget2 = new nexacro.Container("chartWidget2");
+            chartWidget2.set_left(440);
+            chartWidget2.set_top(160);
+            chartWidget2.set_width(400);
+            chartWidget2.set_height(200);
+            chartWidget2.set_background("white");
+            chartWidget2.set_border("1px solid #ccc");
+            
+            var chart2Title = new nexacro.Label("chart2Title");
+            chart2Title.set_text("👥 고객 분석");
+            chart2Title.set_left(10);
+            chart2Title.set_top(10);
+            chart2Title.set_width(380);
+            chart2Title.set_height(25);
+            chart2Title.set_font("bold 14px Arial");
+            chart2Title.set_background("lightgreen");
+            
+            var chart2Area = new nexacro.Label("chart2Area");
+            chart2Area.set_text("🥧 고객 분포 (원형 차트)\n\n" +
+                              "신규 고객: ●●●●●●●●●● 35%\n" +
+                              "기존 고객: ●●●●●●●●●●●●●●●●● 45%\n" +
+                              "VIP 고객: ●●●●● 15%\n" +
+                              "탈퇴 고객: ●● 5%\n\n" +
+                              "📊 고객 만족도: 4.2/5.0\n" +
+                              "🔄 재구매율: 78%\n" +
+                              "💬 리뷰 수: 1,234개");
+            chart2Area.set_left(10);
+            chart2Area.set_top(40);
+            chart2Area.set_width(380);
+            chart2Area.set_height(150);
+            chart2Area.set_background("lightcyan");
+            chart2Area.set_border("1px solid #ccc");
+            chart2Area.set_font("12px Arial");
+            
+            /*
+                ===== 5단계: 알림 위젯 =====
+            */
+            var alertWidget = new nexacro.Container("alertWidget");
+            alertWidget.set_left(860);
+            alertWidget.set_top(160);
+            alertWidget.set_width(120);
+            alertWidget.set_height(200);
+            alertWidget.set_background("white");
+            alertWidget.set_border("1px solid #ccc");
+            
+            var alertTitle = new nexacro.Label("alertTitle");
+            alertTitle.set_text("🚨 알림");
+            alertTitle.set_left(10);
+            alertTitle.set_top(10);
+            alertTitle.set_width(100);
+            alertTitle.set_height(25);
+            alertTitle.set_font("bold 14px Arial");
+            alertTitle.set_background("lightcoral");
+            
+            var alertArea = new nexacro.Label("alertArea");
+            alertArea.set_text("⚠️ 주문 처리율 하락\n" +
+                             "📉 신규 고객 감소\n" +
+                             "✅ 매출 목표 달성\n" +
+                             "📈 고객 만족도 상승\n" +
+                             "🔄 재고 회전율 양호");
+            alertArea.set_left(10);
+            alertArea.set_top(40);
+            alertArea.set_width(100);
+            alertArea.set_height(150);
+            alertArea.set_background("lightyellow");
+            alertArea.set_border("1px solid #ccc");
+            alertArea.set_font("10px Arial");
+            
+            /*
+                ===== 6단계: 실시간 모니터링 위젯 =====
+            */
+            var monitorWidget = new nexacro.Container("monitorWidget");
+            monitorWidget.set_left(20);
+            monitorWidget.set_top(380);
+            monitorWidget.set_width(960);
+            monitorWidget.set_height(180);
+            monitorWidget.set_background("white");
+            monitorWidget.set_border("1px solid #ccc");
+            
+            var monitorTitle = new nexacro.Label("monitorTitle");
+            monitorTitle.set_text("📡 실시간 모니터링");
+            monitorTitle.set_left(10);
+            monitorTitle.set_top(10);
+            monitorTitle.set_width(940);
+            monitorTitle.set_height(25);
+            monitorTitle.set_font("bold 14px Arial");
+            monitorTitle.set_background("lightblue");
+            
+            var monitorArea = new nexacro.Label("monitorArea");
+            monitorArea.set_text("실시간 데이터가 여기에 표시됩니다");
+            monitorArea.set_left(10);
+            monitorArea.set_top(40);
+            monitorArea.set_width(940);
+            monitorArea.set_height(130);
+            monitorArea.set_background("lightgray");
+            monitorArea.set_border("1px solid #ccc");
+            monitorArea.set_font("12px Arial");
+            
+            /*
+                ===== 7단계: 대시보드 함수들 =====
+            */
+            
+            var isRealtimeActive = false;
+            var realtimeInterval;
+            
+            /*
+                KPI 데이터 업데이트
+            */
+            function updateKPIData() {
+                // 실제로는 서버에서 데이터를 가져오지만, 여기서는 시뮬레이션
+                for (var i = 0; i < kpiDataset.getRowCount(); i++) {
+                    var currentValue = kpiDataset.getCellData(i, "currentValue");
+                    var trend = kpiDataset.getCellData(i, "trend");
+                    
+                    // 랜덤하게 값 변경
+                    var change = (Math.random() - 0.5) * 0.1; // ±5% 변화
+                    var newValue = currentValue * (1 + change);
+                    
+                    kpiDataset.setCellData(i, "currentValue", Math.round(newValue));
+                    kpiDataset.setCellData(i, "lastUpdate", new Date().toLocaleString());
+                }
+                
+                updateKPIWidgets();
+            }
+            
+            /*
+                KPI 위젯 업데이트
+            */
+            function updateKPIWidgets() {
+                // 월 매출 업데이트
+                var salesValue = kpiDataset.getCellData(0, "currentValue");
+                var salesTarget = kpiDataset.getCellData(0, "targetValue");
+                var salesPercent = Math.round((salesValue / salesTarget) * 100);
+                kpi1Value.set_text(salesValue.toLocaleString() + "원");
+                kpi1Target.set_text("목표: " + salesTarget.toLocaleString() + "원 (" + salesPercent + "%)");
+                
+                // 신규 고객 업데이트
+                var customerValue = kpiDataset.getCellData(1, "currentValue");
+                var customerTarget = kpiDataset.getCellData(1, "targetValue");
+                var customerPercent = Math.round((customerValue / customerTarget) * 100);
+                kpi2Value.set_text(customerValue + "명");
+                kpi2Target.set_text("목표: " + customerTarget + "명 (" + customerPercent + "%)");
+                
+                // 고객 만족도 업데이트
+                var satisfactionValue = kpiDataset.getCellData(2, "currentValue");
+                var satisfactionTarget = kpiDataset.getCellData(2, "targetValue");
+                var satisfactionPercent = Math.round((satisfactionValue / satisfactionTarget) * 100);
+                kpi3Value.set_text(satisfactionValue + "점");
+                kpi3Target.set_text("목표: " + satisfactionTarget + "점 (" + satisfactionPercent + "%)");
+                
+                // 주문 처리율 업데이트
+                var processValue = kpiDataset.getCellData(3, "currentValue");
+                var processTarget = kpiDataset.getCellData(3, "targetValue");
+                var processPercent = Math.round((processValue / processTarget) * 100);
+                kpi4Value.set_text(processValue + "%");
+                kpi4Target.set_text("목표: " + processTarget + "% (" + processPercent + "%)");
+            }
+            
+            /*
+                실시간 모니터링 시작/중지
+            */
+            function toggleRealtimeMonitoring() {
+                if (isRealtimeActive) {
+                    clearInterval(realtimeInterval);
+                    refreshButton.set_text("실시간 시작");
+                    refreshButton.set_background("lightgreen");
+                    isRealtimeActive = false;
+                    monitorArea.set_text("실시간 모니터링이 중지되었습니다.");
+                } else {
+                    realtimeInterval = setInterval(function() {
+                        updateKPIData();
+                        updateRealtimeMonitor();
+                    }, 3000); // 3초마다 업데이트
+                    
+                    refreshButton.set_text("실시간 중지");
+                    refreshButton.set_background("lightcoral");
+                    isRealtimeActive = true;
+                }
+            }
+            
+            /*
+                실시간 모니터 업데이트
+            */
+            function updateRealtimeMonitor() {
+                var currentTime = new Date().toLocaleTimeString();
+                var monitorText = "🕐 " + currentTime + " - 실시간 데이터 업데이트\n\n";
+                
+                monitorText += "📊 현재 KPI 상태:\n";
+                for (var i = 0; i < kpiDataset.getRowCount(); i++) {
+                    var name = kpiDataset.getCellData(i, "name");
+                    var value = kpiDataset.getCellData(i, "currentValue");
+                    var unit = kpiDataset.getCellData(i, "unit");
+                    var status = kpiDataset.getCellData(i, "status");
+                    
+                    var statusIcon = "";
+                    switch (status) {
+                        case "양호": statusIcon = "✅"; break;
+                        case "주의": statusIcon = "⚠️"; break;
+                        case "경고": statusIcon = "🚨"; break;
+                    }
+                    
+                    monitorText += statusIcon + " " + name + ": " + value + unit + "\n";
+                }
+                
+                monitorText += "\n📈 최근 업데이트: " + new Date().toLocaleString();
+                monitorArea.set_text(monitorText);
+            }
+            
+            /*
+                알림 업데이트
+            */
+            function updateAlerts() {
+                var alertText = "";
+                var alertCount = 0;
+                
+                for (var i = 0; i < kpiDataset.getRowCount(); i++) {
+                    var name = kpiDataset.getCellData(i, "name");
+                    var status = kpiDataset.getCellData(i, "status");
+                    var trend = kpiDataset.getCellData(i, "trend");
+                    
+                    if (status === "경고") {
+                        alertText += "🚨 " + name + " 경고\n";
+                        alertCount++;
+                    } else if (status === "주의") {
+                        alertText += "⚠️ " + name + " 주의\n";
+                        alertCount++;
+                    }
+                }
+                
+                if (alertCount === 0) {
+                    alertText = "✅ 모든 지표 정상\n" +
+                              "📈 매출 상승 추세\n" +
+                              "👥 고객 만족도 양호\n" +
+                              "🔄 시스템 정상 운영";
+                }
+                
+                alertArea.set_text(alertText);
+            }
+            
+            /*
+                ===== 8단계: 이벤트 핸들러 연결 =====
+            */
+            
+            refreshButton.addEventHandler("onclick", function() {
+                if (isRealtimeActive) {
+                    toggleRealtimeMonitoring();
+                } else {
+                    updateKPIData();
+                    updateKPIWidgets();
+                    updateAlerts();
+                    updateRealtimeMonitor();
+                }
+            });
+            
+            /*
+                ===== 9단계: 초기 설정 =====
+            */
+            updateKPIWidgets();
+            updateAlerts();
+            updateRealtimeMonitor();
+            
+            /*
+                ===== 10단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(refreshButton);
+            this.add(mainContainer);
+            this.add(kpiWidget1);
+            this.add(kpi1Title);
+            this.add(kpi1Value);
+            this.add(kpi1Target);
+            this.add(kpi1Trend);
+            this.add(kpiWidget2);
+            this.add(kpi2Title);
+            this.add(kpi2Value);
+            this.add(kpi2Target);
+            this.add(kpi2Trend);
+            this.add(kpiWidget3);
+            this.add(kpi3Title);
+            this.add(kpi3Value);
+            this.add(kpi3Target);
+            this.add(kpi3Trend);
+            this.add(kpiWidget4);
+            this.add(kpi4Title);
+            this.add(kpi4Value);
+            this.add(kpi4Target);
+            this.add(kpi4Trend);
+            this.add(chartWidget1);
+            this.add(chart1Title);
+            this.add(chart1Area);
+            this.add(chartWidget2);
+            this.add(chart2Title);
+            this.add(chart2Area);
+            this.add(alertWidget);
+            this.add(alertTitle);
+            this.add(alertArea);
+            this.add(monitorWidget);
+            this.add(monitorTitle);
+            this.add(monitorArea);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 대시보드와 KPI 기능들:
+                
+                1. KPI (핵심 성과 지표) 표시:
+                   - 현재 값과 목표 값 비교
+                   - 달성률 계산 및 표시
+                   - 트렌드 분석 (상승/하락)
+                   - 상태별 색상 구분
+                
+                2. 대시보드 레이아웃:
+                   - 위젯 기반 인터페이스
+                   - 반응형 레이아웃
+                   - 시각적 계층 구조
+                   - 사용자 친화적 디자인
+                
+                3. 실시간 모니터링:
+                   - 자동 데이터 업데이트
+                   - 실시간 상태 표시
+                   - 알림 시스템
+                   - 성능 모니터링
+                
+                4. 데이터 시각화:
+                   - 차트와 그래프
+                   - 텍스트 기반 시각화
+                   - 색상 코딩
+                   - 아이콘 활용
+                
+                5. 알림 시스템:
+                   - 상태별 알림
+                   - 경고 및 주의 메시지
+                   - 실시간 업데이트
+                   - 시각적 피드백
+                
+                6. 사용자 경험:
+                   - 직관적인 인터페이스
+                   - 빠른 정보 파악
+                   - 반응형 피드백
+                   - 접근성 고려
+                
+                실제 프로젝트에서는:
+                - 전문 차트 라이브러리 사용
+                - 서버와의 실시간 연동
+                - 더 복잡한 KPI 계산
+                - 사용자 맞춤형 대시보드
+                - 모바일 지원
+                - 데이터 내보내기
+                - 알림 설정
+                
+                이제 경영진을 위한 전문적인 대시보드를 만들 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 기본 UI - 버튼과 라벨</title>
+    <!-- 
+        Nexacro 스크립트를 불러오는 부분입니다
+        이 스크립트는 Nexacro 플랫폼의 모든 기능을 사용할 수 있게 해줍니다
+        localhost:8080은 Nexacro 서버가 실행되는 주소입니다
+    -->
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <!-- 
+        Nexacro 애플리케이션이 시작되는 부분입니다
+        이 스크립트 안에서 모든 UI 컴포넌트를 만들고 관리합니다
+    -->
+    <script type="text/javascript">
+        /*
+            이 함수는 페이지가 로드될 때 자동으로 실행됩니다
+            Nexacro에서는 on_application_ready() 함수가 앱이 준비되면 자동으로 호출됩니다
+            여기에 우리가 만들고 싶은 UI 컴포넌트들을 모두 넣어주면 됩니다
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 라벨 컴포넌트 만들기 =====
+                라벨은 사용자에게 텍스트를 보여주는 역할을 합니다
+                마치 종이에 글자를 써서 붙여놓은 것과 같습니다
+            */
+            var label1 = new nexacro.Label("label1");
+            /*
+                new nexacro.Label("label1")의 의미:
+                - new: 새로운 것을 만든다는 뜻
+                - nexacro.Label: Nexacro에서 제공하는 라벨 컴포넌트
+                - "label1": 이 라벨의 이름 (나중에 찾을 때 사용)
+            */
+            
+            // 라벨에 보여줄 글자를 설정합니다
+            label1.set_text("안녕하세요! 이것은 라벨입니다.");
+            
+            /*
+                라벨의 위치와 크기를 설정합니다
+                화면은 마치 좌표계와 같습니다
+                - set_left(50): 왼쪽에서 50픽셀 떨어진 곳에 위치
+                - set_top(50): 위에서 50픽셀 떨어진 곳에 위치
+                - set_width(200): 너비를 200픽셀로 설정
+                - set_height(30): 높이를 30픽셀로 설정
+            */
+            label1.set_left(50);   
+            label1.set_top(50);    
+            label1.set_width(200); 
+            label1.set_height(30); 
+            
+            /*
+                ===== 2단계: 버튼 컴포넌트 만들기 =====
+                버튼은 사용자가 클릭할 수 있는 컴포넌트입니다
+                마치 리모컨의 버튼과 같습니다
+            */
+            var button1 = new nexacro.Button("button1");
+            
+            // 버튼에 보여줄 글자를 설정합니다
+            button1.set_text("클릭하세요!");
+            
+            /*
+                버튼의 위치와 크기를 설정합니다
+                라벨 아래쪽에 배치하기 위해 top을 100으로 설정했습니다
+            */
+            button1.set_left(50);   
+            button1.set_top(100);   
+            button1.set_width(100); 
+            button1.set_height(30); 
+            
+            /*
+                ===== 3단계: 이벤트 처리하기 =====
+                버튼을 클릭했을 때 무엇을 할지 정해줍니다
+                addEventHandler는 "이벤트가 발생하면 이 함수를 실행해줘"라는 뜻입니다
+            */
+            button1.addEventHandler("onclick", function() {
+                /*
+                    버튼이 클릭되면 이 부분이 실행됩니다
+                    function() { ... }는 "이름 없는 함수"입니다
+                    클릭할 때마다 이 안의 코드가 실행됩니다
+                */
+                alert("버튼을 클릭했어요! 잘했어요!");
+                /*
+                    alert()는 팝업창으로 메시지를 보여주는 함수입니다
+                    사용자가 확인 버튼을 누를 때까지 기다립니다
+                */
+            });
+            
+            /*
+                ===== 4단계: 컴포넌트를 화면에 추가하기 =====
+                만든 컴포넌트들을 실제 화면에 보여주기 위해 추가합니다
+                this는 현재 화면(애플리케이션)을 의미합니다
+            */
+            this.add(label1);   // 라벨을 화면에 추가
+            this.add(button1);  // 버튼을 화면에 추가
+            
+            /*
+                ===== 정리 =====
+                지금까지 한 것:
+                1. 라벨 컴포넌트를 만들고 텍스트와 위치, 크기를 설정
+                2. 버튼 컴포넌트를 만들고 텍스트와 위치, 크기를 설정
+                3. 버튼 클릭 이벤트를 처리하는 함수를 연결
+                4. 만든 컴포넌트들을 화면에 추가
+                
+                이제 페이지를 열면 라벨과 버튼이 보이고, 버튼을 클릭하면 알림창이 나타납니다!
+            */
+        }
+    </script>
+</body>
+</html>

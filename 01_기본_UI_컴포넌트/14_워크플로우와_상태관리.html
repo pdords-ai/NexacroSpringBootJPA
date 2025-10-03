@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 워크플로우와 상태 관리</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 워크플로우와 상태 관리 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 상태 기반 워크플로우 구현
+            2. 상태 전환 관리
+            3. 권한 기반 액션 제어
+            4. 상태 히스토리 추적
+            5. 알림과 이벤트 처리
+            6. 승인 프로세스 구현
+            7. 상태 시각화
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 데이터셋 설정 =====
+            */
+            
+            // 문서 데이터셋
+            var documentDataset = new nexacro.Dataset("documentDataset");
+            documentDataset.addColumn("docId", "number");
+            documentDataset.addColumn("title", "string");
+            documentDataset.addColumn("content", "string");
+            documentDataset.addColumn("author", "string");
+            documentDataset.addColumn("createDate", "string");
+            documentDataset.addColumn("currentStatus", "string");
+            documentDataset.addColumn("priority", "string");
+            documentDataset.addColumn("assignee", "string");
+            
+            // 상태 히스토리 데이터셋
+            var statusHistoryDataset = new nexacro.Dataset("statusHistoryDataset");
+            statusHistoryDataset.addColumn("historyId", "number");
+            statusHistoryDataset.addColumn("docId", "number");
+            statusHistoryDataset.addColumn("fromStatus", "string");
+            statusHistoryDataset.addColumn("toStatus", "string");
+            statusHistoryDataset.addColumn("action", "string");
+            statusHistoryDataset.addColumn("user", "string");
+            statusHistoryDataset.addColumn("timestamp", "string");
+            statusHistoryDataset.addColumn("comment", "string");
+            
+            // 샘플 데이터 생성
+            var sampleDocuments = [
+                {docId: 1, title: "프로젝트 계획서", content: "새로운 프로젝트 계획서입니다.", author: "김철수", createDate: "2024-01-15", currentStatus: "작성중", priority: "높음", assignee: "김철수"},
+                {docId: 2, title: "예산 승인 요청", content: "Q1 예산 승인을 요청합니다.", author: "이영희", createDate: "2024-01-16", currentStatus: "검토중", priority: "중간", assignee: "박민수"},
+                {docId: 3, title: "시스템 개선안", content: "시스템 성능 개선 방안입니다.", author: "박민수", createDate: "2024-01-17", currentStatus: "승인대기", priority: "낮음", assignee: "정수진"},
+                {docId: 4, title: "교육 계획", content: "직원 교육 계획서입니다.", author: "정수진", createDate: "2024-01-18", currentStatus: "완료", priority: "중간", assignee: "최영호"},
+                {docId: 5, title: "보고서", content: "월간 보고서입니다.", author: "최영호", createDate: "2024-01-19", currentStatus: "반려", priority: "높음", assignee: "김철수"}
+            ];
+            
+            var sampleHistory = [
+                {historyId: 1, docId: 1, fromStatus: "신규", toStatus: "작성중", action: "작성시작", user: "김철수", timestamp: "2024-01-15 09:00", comment: "문서 작성 시작"},
+                {historyId: 2, docId: 2, fromStatus: "작성중", toStatus: "검토중", action: "제출", user: "이영희", timestamp: "2024-01-16 10:30", comment: "검토 요청"},
+                {historyId: 3, docId: 3, fromStatus: "검토중", toStatus: "승인대기", action: "검토완료", user: "박민수", timestamp: "2024-01-17 14:20", comment: "승인 요청"},
+                {historyId: 4, docId: 4, fromStatus: "승인대기", toStatus: "완료", action: "승인", user: "정수진", timestamp: "2024-01-18 11:15", comment: "승인 완료"},
+                {historyId: 5, docId: 5, fromStatus: "승인대기", toStatus: "반려", action: "반려", user: "최영호", timestamp: "2024-01-19 16:45", comment: "수정 필요"}
+            ];
+            
+            // 데이터셋에 샘플 데이터 추가
+            for (var i = 0; i < sampleDocuments.length; i++) {
+                var doc = sampleDocuments[i];
+                var newRow = documentDataset.addRow();
+                documentDataset.setCellData(newRow, "docId", doc.docId);
+                documentDataset.setCellData(newRow, "title", doc.title);
+                documentDataset.setCellData(newRow, "content", doc.content);
+                documentDataset.setCellData(newRow, "author", doc.author);
+                documentDataset.setCellData(newRow, "createDate", doc.createDate);
+                documentDataset.setCellData(newRow, "currentStatus", doc.currentStatus);
+                documentDataset.setCellData(newRow, "priority", doc.priority);
+                documentDataset.setCellData(newRow, "assignee", doc.assignee);
+            }
+            
+            for (var i = 0; i < sampleHistory.length; i++) {
+                var history = sampleHistory[i];
+                var newRow = statusHistoryDataset.addRow();
+                statusHistoryDataset.setCellData(newRow, "historyId", history.historyId);
+                statusHistoryDataset.setCellData(newRow, "docId", history.docId);
+                statusHistoryDataset.setCellData(newRow, "fromStatus", history.fromStatus);
+                statusHistoryDataset.setCellData(newRow, "toStatus", history.toStatus);
+                statusHistoryDataset.setCellData(newRow, "action", history.action);
+                statusHistoryDataset.setCellData(newRow, "user", history.user);
+                statusHistoryDataset.setCellData(newRow, "timestamp", history.timestamp);
+                statusHistoryDataset.setCellData(newRow, "comment", history.comment);
+            }
+            
+            /*
+                ===== 2단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("워크플로우와 상태 관리 - 문서 승인 시스템");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(800);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            titleLabel.set_background("lightblue");
+            
+            // 메인 컨테이너
+            var mainContainer = new nexacro.Container("mainContainer");
+            mainContainer.set_left(50);
+            mainContainer.set_top(70);
+            mainContainer.set_width(1000);
+            mainContainer.set_height(600);
+            mainContainer.set_background("white");
+            mainContainer.set_border("2px solid #ccc");
+            
+            // 문서 목록 그리드
+            var documentGrid = new nexacro.Grid("documentGrid");
+            documentGrid.set_left(10);
+            documentGrid.set_top(10);
+            documentGrid.set_width(600);
+            documentGrid.set_height(250);
+            documentGrid.set_border("1px solid #ccc");
+            documentGrid.set_dataset(documentDataset);
+            
+            documentGrid.addColumn("docId", "문서ID", 80);
+            documentGrid.addColumn("title", "제목", 150);
+            documentGrid.addColumn("author", "작성자", 80);
+            documentGrid.addColumn("currentStatus", "상태", 80);
+            documentGrid.addColumn("priority", "우선순위", 80);
+            documentGrid.addColumn("assignee", "담당자", 80);
+            
+            // 상태 전환 패널
+            var statusPanel = new nexacro.Container("statusPanel");
+            statusPanel.set_left(620);
+            statusPanel.set_top(10);
+            statusPanel.set_width(370);
+            statusPanel.set_height(250);
+            statusPanel.set_background("lightgray");
+            statusPanel.set_border("1px solid #ccc");
+            
+            var statusTitle = new nexacro.Label("statusTitle");
+            statusTitle.set_text("상태 전환");
+            statusTitle.set_left(10);
+            statusTitle.set_top(10);
+            statusTitle.set_width(350);
+            statusTitle.set_height(25);
+            statusTitle.set_font("bold 14px Arial");
+            statusTitle.set_background("darkgray");
+            statusTitle.set_color("white");
+            
+            var currentStatusLabel = new nexacro.Label("currentStatusLabel");
+            currentStatusLabel.set_text("현재 상태: -");
+            currentStatusLabel.set_left(10);
+            currentStatusLabel.set_top(45);
+            currentStatusLabel.set_width(350);
+            currentStatusLabel.set_height(25);
+            currentStatusLabel.set_font("bold 12px Arial");
+            
+            var statusFlowLabel = new nexacro.Label("statusFlowLabel");
+            statusFlowLabel.set_text("상태 흐름: 신규 → 작성중 → 검토중 → 승인대기 → 완료/반려");
+            statusFlowLabel.set_left(10);
+            statusFlowLabel.set_top(75);
+            statusFlowLabel.set_width(350);
+            statusFlowLabel.set_height(40);
+            statusFlowLabel.set_font("10px Arial");
+            statusFlowLabel.set_background("lightyellow");
+            
+            // 상태 전환 버튼들
+            var submitButton = new nexacro.Button("submitButton");
+            submitButton.set_text("제출");
+            submitButton.set_left(10);
+            submitButton.set_top(125);
+            submitButton.set_width(80);
+            submitButton.set_height(30);
+            submitButton.set_background("lightblue");
+            submitButton.set_visible(false);
+            
+            var reviewButton = new nexacro.Button("reviewButton");
+            reviewButton.set_text("검토완료");
+            reviewButton.set_left(100);
+            reviewButton.set_top(125);
+            reviewButton.set_width(80);
+            reviewButton.set_height(30);
+            reviewButton.set_background("lightgreen");
+            reviewButton.set_visible(false);
+            
+            var approveButton = new nexacro.Button("approveButton");
+            approveButton.set_text("승인");
+            approveButton.set_left(190);
+            approveButton.set_top(125);
+            approveButton.set_width(80);
+            approveButton.set_height(30);
+            approveButton.set_background("lightgreen");
+            approveButton.set_visible(false);
+            
+            var rejectButton = new nexacro.Button("rejectButton");
+            rejectButton.set_text("반려");
+            rejectButton.set_left(280);
+            rejectButton.set_top(125);
+            rejectButton.set_width(80);
+            rejectButton.set_height(30);
+            rejectButton.set_background("lightcoral");
+            rejectButton.set_visible(false);
+            
+            var returnButton = new nexacro.Button("returnButton");
+            returnButton.set_text("반환");
+            returnButton.set_left(10);
+            returnButton.set_top(165);
+            returnButton.set_width(80);
+            returnButton.set_height(30);
+            returnButton.set_background("lightyellow");
+            returnButton.set_visible(false);
+            
+            var completeButton = new nexacro.Button("completeButton");
+            completeButton.set_text("완료");
+            completeButton.set_left(100);
+            completeButton.set_top(165);
+            completeButton.set_width(80);
+            completeButton.set_height(30);
+            completeButton.set_background("lightgreen");
+            completeButton.set_visible(false);
+            
+            // 코멘트 입력
+            var commentLabel = new nexacro.Label("commentLabel");
+            commentLabel.set_text("코멘트:");
+            commentLabel.set_left(10);
+            commentLabel.set_top(205);
+            commentLabel.set_width(60);
+            commentLabel.set_height(20);
+            
+            var commentText = new nexacro.TextBox("commentText");
+            commentText.set_left(80);
+            commentText.set_top(205);
+            commentText.set_width(280);
+            commentText.set_height(20);
+            commentText.set_placeholder("상태 전환 시 코멘트를 입력하세요");
+            
+            // 상태 히스토리 그리드
+            var historyGrid = new nexacro.Grid("historyGrid");
+            historyGrid.set_left(10);
+            historyGrid.set_top(270);
+            historyGrid.set_width(980);
+            historyGrid.set_height(200);
+            historyGrid.set_border("1px solid #ccc");
+            historyGrid.set_dataset(statusHistoryDataset);
+            
+            historyGrid.addColumn("docId", "문서ID", 80);
+            historyGrid.addColumn("fromStatus", "이전상태", 80);
+            historyGrid.addColumn("toStatus", "새상태", 80);
+            historyGrid.addColumn("action", "액션", 100);
+            historyGrid.addColumn("user", "사용자", 80);
+            historyGrid.addColumn("timestamp", "시간", 150);
+            historyGrid.addColumn("comment", "코멘트", 200);
+            
+            // 알림 패널
+            var notificationPanel = new nexacro.Container("notificationPanel");
+            notificationPanel.set_left(10);
+            notificationPanel.set_top(480);
+            notificationPanel.set_width(980);
+            notificationPanel.set_height(110);
+            notificationPanel.set_background("lightcyan");
+            notificationPanel.set_border("1px solid #ccc");
+            
+            var notificationTitle = new nexacro.Label("notificationTitle");
+            notificationTitle.set_text("알림 및 이벤트");
+            notificationTitle.set_left(10);
+            notificationTitle.set_top(10);
+            notificationTitle.set_width(960);
+            notificationTitle.set_height(25);
+            notificationTitle.set_font("bold 14px Arial");
+            notificationTitle.set_background("darkcyan");
+            notificationTitle.set_color("white");
+            
+            var notificationText = new nexacro.Label("notificationText");
+            notificationText.set_text("문서를 선택하면 관련 알림이 표시됩니다");
+            notificationText.set_left(10);
+            notificationText.set_top(45);
+            notificationText.set_width(960);
+            notificationText.set_height(55);
+            notificationText.set_background("white");
+            notificationText.set_border("1px solid #ccc");
+            
+            /*
+                ===== 3단계: 워크플로우 상태 정의 =====
+            */
+            var workflowStates = {
+                "신규": {
+                    nextStates: ["작성중"],
+                    actions: ["작성시작"],
+                    allowedUsers: ["작성자"]
+                },
+                "작성중": {
+                    nextStates: ["검토중", "신규"],
+                    actions: ["제출", "취소"],
+                    allowedUsers: ["작성자"]
+                },
+                "검토중": {
+                    nextStates: ["승인대기", "작성중"],
+                    actions: ["검토완료", "반환"],
+                    allowedUsers: ["검토자"]
+                },
+                "승인대기": {
+                    nextStates: ["완료", "반려", "검토중"],
+                    actions: ["승인", "반려", "반환"],
+                    allowedUsers: ["승인자"]
+                },
+                "완료": {
+                    nextStates: [],
+                    actions: [],
+                    allowedUsers: []
+                },
+                "반려": {
+                    nextStates: ["작성중"],
+                    actions: ["재작성"],
+                    allowedUsers: ["작성자"]
+                }
+            };
+            
+            var currentUser = "김철수"; // 현재 사용자 (실제로는 로그인 정보에서 가져옴)
+            var selectedDocument = null;
+            
+            /*
+                ===== 4단계: 워크플로우 함수들 =====
+            */
+            
+            /*
+                문서 선택 시 상태 업데이트
+            */
+            function updateDocumentSelection(docId) {
+                selectedDocument = docId;
+                
+                // 선택된 문서 정보 가져오기
+                var docInfo = null;
+                for (var i = 0; i < documentDataset.getRowCount(); i++) {
+                    if (documentDataset.getCellData(i, "docId") === docId) {
+                        docInfo = {
+                            docId: documentDataset.getCellData(i, "docId"),
+                            title: documentDataset.getCellData(i, "title"),
+                            author: documentDataset.getCellData(i, "author"),
+                            currentStatus: documentDataset.getCellData(i, "currentStatus"),
+                            assignee: documentDataset.getCellData(i, "assignee")
+                        };
+                        break;
+                    }
+                }
+                
+                if (docInfo) {
+                    currentStatusLabel.set_text("현재 상태: " + docInfo.currentStatus);
+                    updateStatusButtons(docInfo.currentStatus, docInfo.author, docInfo.assignee);
+                    updateNotification(docInfo);
+                    updateHistoryGrid(docId);
+                }
+            }
+            
+            /*
+                상태 버튼 업데이트
+            */
+            function updateStatusButtons(currentStatus, author, assignee) {
+                // 모든 버튼 숨기기
+                submitButton.set_visible(false);
+                reviewButton.set_visible(false);
+                approveButton.set_visible(false);
+                rejectButton.set_visible(false);
+                returnButton.set_visible(false);
+                completeButton.set_visible(false);
+                
+                // 현재 상태에 따라 버튼 표시
+                var stateInfo = workflowStates[currentStatus];
+                if (stateInfo) {
+                    for (var i = 0; i < stateInfo.actions.length; i++) {
+                        var action = stateInfo.actions[i];
+                        switch (action) {
+                            case "제출":
+                                if (author === currentUser) {
+                                    submitButton.set_visible(true);
+                                }
+                                break;
+                            case "검토완료":
+                                if (assignee === currentUser) {
+                                    reviewButton.set_visible(true);
+                                }
+                                break;
+                            case "승인":
+                                if (assignee === currentUser) {
+                                    approveButton.set_visible(true);
+                                }
+                                break;
+                            case "반려":
+                                if (assignee === currentUser) {
+                                    rejectButton.set_visible(true);
+                                }
+                                break;
+                            case "반환":
+                                if (assignee === currentUser) {
+                                    returnButton.set_visible(true);
+                                }
+                                break;
+                            case "재작성":
+                                if (author === currentUser) {
+                                    completeButton.set_visible(true);
+                                    completeButton.set_text("재작성");
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+            
+            /*
+                상태 전환 실행
+            */
+            function executeStatusTransition(action, newStatus) {
+                if (!selectedDocument) {
+                    alert("문서를 선택해주세요!");
+                    return;
+                }
+                
+                var comment = commentText.get_text();
+                if (!comment) {
+                    comment = action + " 처리";
+                }
+                
+                // 현재 문서 정보 가져오기
+                var currentStatus = "";
+                for (var i = 0; i < documentDataset.getRowCount(); i++) {
+                    if (documentDataset.getCellData(i, "docId") === selectedDocument) {
+                        currentStatus = documentDataset.getCellData(i, "currentStatus");
+                        documentDataset.setCellData(i, "currentStatus", newStatus);
+                        break;
+                    }
+                }
+                
+                // 히스토리 추가
+                var newHistoryRow = statusHistoryDataset.addRow();
+                statusHistoryDataset.setCellData(newHistoryRow, "historyId", statusHistoryDataset.getRowCount() + 1);
+                statusHistoryDataset.setCellData(newHistoryRow, "docId", selectedDocument);
+                statusHistoryDataset.setCellData(newHistoryRow, "fromStatus", currentStatus);
+                statusHistoryDataset.setCellData(newHistoryRow, "toStatus", newStatus);
+                statusHistoryDataset.setCellData(newHistoryRow, "action", action);
+                statusHistoryDataset.setCellData(newHistoryRow, "user", currentUser);
+                statusHistoryDataset.setCellData(newHistoryRow, "timestamp", new Date().toLocaleString());
+                statusHistoryDataset.setCellData(newHistoryRow, "comment", comment);
+                
+                // UI 업데이트
+                updateDocumentSelection(selectedDocument);
+                commentText.set_text("");
+                
+                // 알림 표시
+                showNotification("상태가 '" + currentStatus + "'에서 '" + newStatus + "'로 변경되었습니다.");
+            }
+            
+            /*
+                히스토리 그리드 업데이트
+            */
+            function updateHistoryGrid(docId) {
+                var filteredHistory = new nexacro.Dataset("filteredHistory");
+                filteredHistory.addColumn("docId", "number");
+                filteredHistory.addColumn("fromStatus", "string");
+                filteredHistory.addColumn("toStatus", "string");
+                filteredHistory.addColumn("action", "string");
+                filteredHistory.addColumn("user", "string");
+                filteredHistory.addColumn("timestamp", "string");
+                filteredHistory.addColumn("comment", "string");
+                
+                for (var i = 0; i < statusHistoryDataset.getRowCount(); i++) {
+                    if (statusHistoryDataset.getCellData(i, "docId") === docId) {
+                        var newRow = filteredHistory.addRow();
+                        filteredHistory.setCellData(newRow, "docId", statusHistoryDataset.getCellData(i, "docId"));
+                        filteredHistory.setCellData(newRow, "fromStatus", statusHistoryDataset.getCellData(i, "fromStatus"));
+                        filteredHistory.setCellData(newRow, "toStatus", statusHistoryDataset.getCellData(i, "toStatus"));
+                        filteredHistory.setCellData(newRow, "action", statusHistoryDataset.getCellData(i, "action"));
+                        filteredHistory.setCellData(newRow, "user", statusHistoryDataset.getCellData(i, "user"));
+                        filteredHistory.setCellData(newRow, "timestamp", statusHistoryDataset.getCellData(i, "timestamp"));
+                        filteredHistory.setCellData(newRow, "comment", statusHistoryDataset.getCellData(i, "comment"));
+                    }
+                }
+                
+                historyGrid.set_dataset(filteredHistory);
+            }
+            
+            /*
+                알림 업데이트
+            */
+            function updateNotification(docInfo) {
+                var notification = "📋 문서 정보\n";
+                notification += "제목: " + docInfo.title + "\n";
+                notification += "작성자: " + docInfo.author + "\n";
+                notification += "현재 상태: " + docInfo.currentStatus + "\n";
+                notification += "담당자: " + docInfo.assignee + "\n\n";
+                
+                // 상태별 알림 메시지
+                switch (docInfo.currentStatus) {
+                    case "작성중":
+                        notification += "⚠️ 문서가 작성 중입니다. 작성 완료 후 제출해주세요.";
+                        break;
+                    case "검토중":
+                        notification += "🔍 문서가 검토 중입니다. 검토 완료 후 승인 요청해주세요.";
+                        break;
+                    case "승인대기":
+                        notification += "⏳ 문서가 승인 대기 중입니다. 승인 또는 반려 처리해주세요.";
+                        break;
+                    case "완료":
+                        notification += "✅ 문서가 완료되었습니다.";
+                        break;
+                    case "반려":
+                        notification += "❌ 문서가 반려되었습니다. 수정 후 재제출해주세요.";
+                        break;
+                }
+                
+                notificationText.set_text(notification);
+            }
+            
+            /*
+                알림 표시
+            */
+            function showNotification(message) {
+                var currentTime = new Date().toLocaleTimeString();
+                var fullMessage = "[" + currentTime + "] " + message;
+                
+                // 기존 알림에 새 메시지 추가
+                var existingText = notificationText.get_text();
+                notificationText.set_text(fullMessage + "\n" + existingText);
+                
+                // 3초 후 알림 자동 제거 (선택사항)
+                setTimeout(function() {
+                    // 알림 제거 로직
+                }, 5000);
+            }
+            
+            /*
+                ===== 5단계: 이벤트 핸들러 연결 =====
+            */
+            
+            // 문서 그리드 이벤트
+            documentGrid.addEventHandler("onrowchanged", function() {
+                var selectedRow = documentGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    var docId = documentDataset.getCellData(selectedRow, "docId");
+                    updateDocumentSelection(docId);
+                }
+            });
+            
+            // 상태 전환 버튼 이벤트
+            submitButton.addEventHandler("onclick", function() {
+                executeStatusTransition("제출", "검토중");
+            });
+            
+            reviewButton.addEventHandler("onclick", function() {
+                executeStatusTransition("검토완료", "승인대기");
+            });
+            
+            approveButton.addEventHandler("onclick", function() {
+                executeStatusTransition("승인", "완료");
+            });
+            
+            rejectButton.addEventHandler("onclick", function() {
+                executeStatusTransition("반려", "반려");
+            });
+            
+            returnButton.addEventHandler("onclick", function() {
+                var currentStatus = "";
+                for (var i = 0; i < documentDataset.getRowCount(); i++) {
+                    if (documentDataset.getCellData(i, "docId") === selectedDocument) {
+                        currentStatus = documentDataset.getCellData(i, "currentStatus");
+                        break;
+                    }
+                }
+                
+                var returnStatus = "";
+                switch (currentStatus) {
+                    case "검토중":
+                        returnStatus = "작성중";
+                        break;
+                    case "승인대기":
+                        returnStatus = "검토중";
+                        break;
+                }
+                
+                if (returnStatus) {
+                    executeStatusTransition("반환", returnStatus);
+                }
+            });
+            
+            completeButton.addEventHandler("onclick", function() {
+                if (completeButton.get_text() === "재작성") {
+                    executeStatusTransition("재작성", "작성중");
+                } else {
+                    executeStatusTransition("완료", "완료");
+                }
+            });
+            
+            /*
+                ===== 6단계: 초기 설정 =====
+            */
+            // 첫 번째 문서 선택
+            if (documentDataset.getRowCount() > 0) {
+                documentGrid.set_selectedrow(0);
+                var firstDocId = documentDataset.getCellData(0, "docId");
+                updateDocumentSelection(firstDocId);
+            }
+            
+            /*
+                ===== 7단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(mainContainer);
+            this.add(documentGrid);
+            this.add(statusPanel);
+            this.add(statusTitle);
+            this.add(currentStatusLabel);
+            this.add(statusFlowLabel);
+            this.add(submitButton);
+            this.add(reviewButton);
+            this.add(approveButton);
+            this.add(rejectButton);
+            this.add(returnButton);
+            this.add(completeButton);
+            this.add(commentLabel);
+            this.add(commentText);
+            this.add(historyGrid);
+            this.add(notificationPanel);
+            this.add(notificationTitle);
+            this.add(notificationText);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 워크플로우와 상태 관리 기능들:
+                
+                1. 상태 기반 워크플로우:
+                   - 문서의 생명주기 관리
+                   - 상태 전환 규칙 정의
+                   - 권한 기반 액션 제어
+                
+                2. 상태 전환 관리:
+                   - 현재 상태에 따른 가능한 액션 표시
+                   - 사용자 권한에 따른 버튼 활성화/비활성화
+                   - 상태 전환 시 검증 로직
+                
+                3. 히스토리 추적:
+                   - 모든 상태 변경 이력 기록
+                   - 사용자, 시간, 코멘트 정보 저장
+                   - 감사 추적 (Audit Trail)
+                
+                4. 알림 시스템:
+                   - 상태별 알림 메시지
+                   - 실시간 이벤트 알림
+                   - 사용자 친화적인 피드백
+                
+                5. 권한 관리:
+                   - 역할 기반 액션 제어
+                   - 사용자별 권한 확인
+                   - 보안 강화
+                
+                6. 사용자 경험:
+                   - 직관적인 상태 표시
+                   - 명확한 액션 버튼
+                   - 실시간 피드백
+                
+                실제 프로젝트에서는:
+                - 더 복잡한 워크플로우 규칙
+                - 다중 승인자 지원
+                - 병렬 처리 지원
+                - 이메일 알림 연동
+                - 모바일 지원
+                - API 연동
+                
+                이제 엔터프라이즈급 워크플로우 시스템을 만들 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>

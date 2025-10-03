@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 기본 UI - 그리드(테이블)</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        function on_application_ready() {
+            // 1. 그리드 제목 라벨
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("학생 정보 관리");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(200);
+            titleLabel.set_height(30);
+            titleLabel.set_font("bold 16px Arial");
+            
+            // 2. 그리드 컴포넌트 생성
+            var studentGrid = new nexacro.Grid("studentGrid");
+            studentGrid.set_left(50);
+            studentGrid.set_top(60);
+            studentGrid.set_width(600);
+            studentGrid.set_height(300);
+            studentGrid.set_border("1px solid #ccc");
+            
+            // 3. 그리드에 컬럼들을 추가합니다
+            studentGrid.addColumn("name", "이름", 100);
+            studentGrid.addColumn("age", "나이", 80);
+            studentGrid.addColumn("grade", "학년", 80);
+            studentGrid.addColumn("subject", "전공", 120);
+            studentGrid.addColumn("score", "평균점수", 100);
+            studentGrid.addColumn("status", "상태", 100);
+            
+            // 4. 그리드에 샘플 데이터를 추가합니다
+            studentGrid.addRow();
+            studentGrid.setCellData(0, "name", "김철수");
+            studentGrid.setCellData(0, "age", "20");
+            studentGrid.setCellData(0, "grade", "2학년");
+            studentGrid.setCellData(0, "subject", "컴퓨터공학");
+            studentGrid.setCellData(0, "score", "85.5");
+            studentGrid.setCellData(0, "status", "재학중");
+            
+            studentGrid.addRow();
+            studentGrid.setCellData(1, "name", "이영희");
+            studentGrid.setCellData(1, "age", "21");
+            studentGrid.setCellData(1, "grade", "3학년");
+            studentGrid.setCellData(1, "subject", "경영학");
+            studentGrid.setCellData(1, "score", "92.3");
+            studentGrid.setCellData(1, "status", "재학중");
+            
+            studentGrid.addRow();
+            studentGrid.setCellData(2, "name", "박민수");
+            studentGrid.setCellData(2, "age", "19");
+            studentGrid.setCellData(2, "grade", "1학년");
+            studentGrid.setCellData(2, "subject", "수학");
+            studentGrid.setCellData(2, "score", "78.9");
+            studentGrid.setCellData(2, "status", "재학중");
+            
+            studentGrid.addRow();
+            studentGrid.setCellData(3, "name", "정수진");
+            studentGrid.setCellData(3, "age", "22");
+            studentGrid.setCellData(3, "grade", "4학년");
+            studentGrid.setCellData(3, "subject", "영문학");
+            studentGrid.setCellData(3, "score", "88.7");
+            studentGrid.setCellData(3, "status", "졸업예정");
+            
+            // 5. 입력 폼 라벨들
+            var formLabel = new nexacro.Label("formLabel");
+            formLabel.set_text("새 학생 정보 입력:");
+            formLabel.set_left(50);
+            formLabel.set_top(380);
+            formLabel.set_width(200);
+            formLabel.set_height(30);
+            formLabel.set_font("bold 14px Arial");
+            
+            // 6. 입력 필드들
+            var nameLabel = new nexacro.Label("nameLabel");
+            nameLabel.set_text("이름:");
+            nameLabel.set_left(50);
+            nameLabel.set_top(420);
+            nameLabel.set_width(50);
+            nameLabel.set_height(25);
+            
+            var nameText = new nexacro.TextBox("nameText");
+            nameText.set_left(110);
+            nameText.set_top(420);
+            nameText.set_width(100);
+            nameText.set_height(25);
+            
+            var ageLabel = new nexacro.Label("ageLabel");
+            ageLabel.set_text("나이:");
+            ageLabel.set_left(220);
+            ageLabel.set_top(420);
+            ageLabel.set_width(50);
+            ageLabel.set_height(25);
+            
+            var ageText = new nexacro.TextBox("ageText");
+            ageText.set_left(280);
+            ageText.set_top(420);
+            ageText.set_width(60);
+            ageText.set_height(25);
+            ageText.set_inputtype("number");
+            
+            var gradeLabel = new nexacro.Label("gradeLabel");
+            gradeLabel.set_text("학년:");
+            gradeLabel.set_left(350);
+            gradeLabel.set_top(420);
+            gradeLabel.set_width(50);
+            gradeLabel.set_height(25);
+            
+            var gradeCombo = new nexacro.ComboBox("gradeCombo");
+            gradeCombo.set_left(410);
+            gradeCombo.set_top(420);
+            gradeCombo.set_width(80);
+            gradeCombo.set_height(25);
+            gradeCombo.addItem("1학년", "1");
+            gradeCombo.addItem("2학년", "2");
+            gradeCombo.addItem("3학년", "3");
+            gradeCombo.addItem("4학년", "4");
+            
+            var subjectLabel = new nexacro.Label("subjectLabel");
+            subjectLabel.set_text("전공:");
+            subjectLabel.set_left(50);
+            subjectLabel.set_top(460);
+            subjectLabel.set_width(50);
+            subjectLabel.set_height(25);
+            
+            var subjectCombo = new nexacro.ComboBox("subjectCombo");
+            subjectCombo.set_left(110);
+            subjectCombo.set_top(460);
+            subjectCombo.set_width(120);
+            subjectCombo.set_height(25);
+            subjectCombo.addItem("컴퓨터공학", "computer");
+            subjectCombo.addItem("경영학", "business");
+            subjectCombo.addItem("수학", "math");
+            subjectCombo.addItem("영문학", "english");
+            subjectCombo.addItem("물리학", "physics");
+            subjectCombo.addItem("화학", "chemistry");
+            
+            var scoreLabel = new nexacro.Label("scoreLabel");
+            scoreLabel.set_text("평균점수:");
+            scoreLabel.set_left(240);
+            scoreLabel.set_top(460);
+            scoreLabel.set_width(80);
+            scoreLabel.set_height(25);
+            
+            var scoreText = new nexacro.TextBox("scoreText");
+            scoreText.set_left(330);
+            scoreText.set_top(460);
+            scoreText.set_width(80);
+            scoreText.set_height(25);
+            scoreText.set_inputtype("number");
+            
+            var statusLabel = new nexacro.Label("statusLabel");
+            statusLabel.set_text("상태:");
+            statusLabel.set_left(420);
+            statusLabel.set_top(460);
+            statusLabel.set_width(50);
+            statusLabel.set_height(25);
+            
+            var statusCombo = new nexacro.ComboBox("statusCombo");
+            statusCombo.set_left(480);
+            statusCombo.set_top(460);
+            statusCombo.set_width(100);
+            statusCombo.set_height(25);
+            statusCombo.addItem("재학중", "enrolled");
+            statusCombo.addItem("졸업예정", "graduating");
+            statusCombo.addItem("휴학중", "on_leave");
+            
+            // 7. 버튼들
+            var addButton = new nexacro.Button("addButton");
+            addButton.set_text("추가");
+            addButton.set_left(50);
+            addButton.set_top(500);
+            addButton.set_width(80);
+            addButton.set_height(30);
+            
+            var updateButton = new nexacro.Button("updateButton");
+            updateButton.set_text("수정");
+            updateButton.set_left(140);
+            updateButton.set_top(500);
+            updateButton.set_width(80);
+            updateButton.set_height(30);
+            
+            var deleteButton = new nexacro.Button("deleteButton");
+            deleteButton.set_text("삭제");
+            deleteButton.set_left(230);
+            deleteButton.set_top(500);
+            deleteButton.set_width(80);
+            deleteButton.set_height(30);
+            
+            var clearButton = new nexacro.Button("clearButton");
+            clearButton.set_text("초기화");
+            clearButton.set_left(320);
+            clearButton.set_top(500);
+            clearButton.set_width(80);
+            clearButton.set_height(30);
+            
+            // 8. 상태 표시 라벨
+            var statusLabel2 = new nexacro.Label("statusLabel2");
+            statusLabel2.set_text("상태: 준비됨");
+            statusLabel2.set_left(50);
+            statusLabel2.set_top(550);
+            statusLabel2.set_width(300);
+            statusLabel2.set_height(30);
+            statusLabel2.set_background("lightgray");
+            
+            // 9. 그리드 행 선택 이벤트
+            studentGrid.addEventHandler("onrowchanged", function() {
+                var selectedRow = studentGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    // 선택된 행의 데이터를 입력 필드에 표시
+                    nameText.set_text(studentGrid.getCellData(selectedRow, "name"));
+                    ageText.set_text(studentGrid.getCellData(selectedRow, "age"));
+                    gradeCombo.set_text(studentGrid.getCellData(selectedRow, "grade"));
+                    subjectCombo.set_text(studentGrid.getCellData(selectedRow, "subject"));
+                    scoreText.set_text(studentGrid.getCellData(selectedRow, "score"));
+                    statusCombo.set_text(studentGrid.getCellData(selectedRow, "status"));
+                    
+                    statusLabel2.set_text("상태: 행 " + (selectedRow + 1) + " 선택됨");
+                }
+            });
+            
+            // 10. 추가 버튼 이벤트
+            addButton.addEventHandler("onclick", function() {
+                if (validateInput()) {
+                    var newRow = studentGrid.addRow();
+                    studentGrid.setCellData(newRow, "name", nameText.get_text());
+                    studentGrid.setCellData(newRow, "age", ageText.get_text());
+                    studentGrid.setCellData(newRow, "grade", gradeCombo.get_text());
+                    studentGrid.setCellData(newRow, "subject", subjectCombo.get_text());
+                    studentGrid.setCellData(newRow, "score", scoreText.get_text());
+                    studentGrid.setCellData(newRow, "status", statusCombo.get_text());
+                    
+                    clearInputFields();
+                    statusLabel2.set_text("상태: 새 학생 정보가 추가되었습니다");
+                }
+            });
+            
+            // 11. 수정 버튼 이벤트
+            updateButton.addEventHandler("onclick", function() {
+                var selectedRow = studentGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    if (validateInput()) {
+                        studentGrid.setCellData(selectedRow, "name", nameText.get_text());
+                        studentGrid.setCellData(selectedRow, "age", ageText.get_text());
+                        studentGrid.setCellData(selectedRow, "grade", gradeCombo.get_text());
+                        studentGrid.setCellData(selectedRow, "subject", subjectCombo.get_text());
+                        studentGrid.setCellData(selectedRow, "score", scoreText.get_text());
+                        studentGrid.setCellData(selectedRow, "status", statusCombo.get_text());
+                        
+                        statusLabel2.set_text("상태: 학생 정보가 수정되었습니다");
+                    }
+                } else {
+                    alert("수정할 행을 먼저 선택해주세요!");
+                }
+            });
+            
+            // 12. 삭제 버튼 이벤트
+            deleteButton.addEventHandler("onclick", function() {
+                var selectedRow = studentGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    if (confirm("선택된 학생 정보를 삭제하시겠습니까?")) {
+                        studentGrid.removeRow(selectedRow);
+                        clearInputFields();
+                        statusLabel2.set_text("상태: 학생 정보가 삭제되었습니다");
+                    }
+                } else {
+                    alert("삭제할 행을 먼저 선택해주세요!");
+                }
+            });
+            
+            // 13. 초기화 버튼 이벤트
+            clearButton.addEventHandler("onclick", function() {
+                clearInputFields();
+                studentGrid.set_selectedrow(-1);
+                statusLabel2.set_text("상태: 입력 필드가 초기화되었습니다");
+            });
+            
+            // 입력 유효성 검사 함수
+            function validateInput() {
+                if (nameText.get_text().trim() == "") {
+                    alert("이름을 입력해주세요!");
+                    nameText.focus();
+                    return false;
+                }
+                if (ageText.get_text().trim() == "") {
+                    alert("나이를 입력해주세요!");
+                    ageText.focus();
+                    return false;
+                }
+                if (gradeCombo.get_text() == "") {
+                    alert("학년을 선택해주세요!");
+                    gradeCombo.focus();
+                    return false;
+                }
+                if (subjectCombo.get_text() == "") {
+                    alert("전공을 선택해주세요!");
+                    subjectCombo.focus();
+                    return false;
+                }
+                if (scoreText.get_text().trim() == "") {
+                    alert("평균점수를 입력해주세요!");
+                    scoreText.focus();
+                    return false;
+                }
+                if (statusCombo.get_text() == "") {
+                    alert("상태를 선택해주세요!");
+                    statusCombo.focus();
+                    return false;
+                }
+                return true;
+            }
+            
+            // 입력 필드 초기화 함수
+            function clearInputFields() {
+                nameText.set_text("");
+                ageText.set_text("");
+                gradeCombo.set_text("");
+                subjectCombo.set_text("");
+                scoreText.set_text("");
+                statusCombo.set_text("");
+            }
+            
+            // 14. 모든 컴포넌트를 화면에 추가합니다
+            this.add(titleLabel);
+            this.add(studentGrid);
+            this.add(formLabel);
+            this.add(nameLabel);
+            this.add(nameText);
+            this.add(ageLabel);
+            this.add(ageText);
+            this.add(gradeLabel);
+            this.add(gradeCombo);
+            this.add(subjectLabel);
+            this.add(subjectCombo);
+            this.add(scoreLabel);
+            this.add(scoreText);
+            this.add(statusLabel);
+            this.add(statusCombo);
+            this.add(addButton);
+            this.add(updateButton);
+            this.add(deleteButton);
+            this.add(clearButton);
+            this.add(statusLabel2);
+        }
+    </script>
+</body>
+</html>

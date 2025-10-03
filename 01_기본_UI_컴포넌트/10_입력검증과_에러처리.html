@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 입력검증과 에러처리</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 입력검증과 에러처리 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 다양한 입력 검증 방법
+            2. 실시간 유효성 검사
+            3. 에러 메시지 표시
+            4. 사용자 친화적인 피드백
+            5. 예외 상황 처리
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("회원가입 폼 - 입력검증과 에러처리 예제");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(600);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            titleLabel.set_background("lightblue");
+            
+            // 에러 메시지 표시 영역
+            var errorLabel = new nexacro.Label("errorLabel");
+            errorLabel.set_text("에러 메시지가 여기에 표시됩니다");
+            errorLabel.set_left(50);
+            errorLabel.set_top(70);
+            errorLabel.set_width(600);
+            errorLabel.set_height(30);
+            errorLabel.set_background("lightcoral");
+            errorLabel.set_color("darkred");
+            errorLabel.set_border("1px solid #ff0000");
+            errorLabel.set_visible(false); // 처음에는 숨김
+            
+            // 성공 메시지 표시 영역
+            var successLabel = new nexacro.Label("successLabel");
+            successLabel.set_text("성공 메시지가 여기에 표시됩니다");
+            successLabel.set_left(50);
+            successLabel.set_top(70);
+            successLabel.set_width(600);
+            successLabel.set_height(30);
+            successLabel.set_background("lightgreen");
+            successLabel.set_color("darkgreen");
+            successLabel.set_border("1px solid #00ff00");
+            successLabel.set_visible(false); // 처음에는 숨김
+            
+            /*
+                ===== 2단계: 입력 필드들 만들기 =====
+            */
+            
+            // 아이디 입력
+            var idLabel = new nexacro.Label("idLabel");
+            idLabel.set_text("아이디 *:");
+            idLabel.set_left(50);
+            idLabel.set_top(120);
+            idLabel.set_width(100);
+            idLabel.set_height(25);
+            idLabel.set_font("bold 12px Arial");
+            
+            var idText = new nexacro.TextBox("idText");
+            idText.set_left(160);
+            idText.set_top(120);
+            idText.set_width(200);
+            idText.set_height(25);
+            idText.set_placeholder("영문, 숫자 4-20자");
+            
+            var idStatusLabel = new nexacro.Label("idStatusLabel");
+            idStatusLabel.set_text("");
+            idStatusLabel.set_left(370);
+            idStatusLabel.set_top(120);
+            idStatusLabel.set_width(200);
+            idStatusLabel.set_height(25);
+            idStatusLabel.set_font("12px Arial");
+            
+            // 비밀번호 입력
+            var pwdLabel = new nexacro.Label("pwdLabel");
+            pwdLabel.set_text("비밀번호 *:");
+            pwdLabel.set_left(50);
+            pwdLabel.set_top(160);
+            pwdLabel.set_width(100);
+            pwdLabel.set_height(25);
+            pwdLabel.set_font("bold 12px Arial");
+            
+            var pwdText = new nexacro.TextBox("pwdText");
+            pwdText.set_left(160);
+            pwdText.set_top(160);
+            pwdText.set_width(200);
+            pwdText.set_height(25);
+            pwdText.set_placeholder("영문, 숫자, 특수문자 8-20자");
+            pwdText.set_inputtype("password");
+            
+            var pwdStatusLabel = new nexacro.Label("pwdStatusLabel");
+            pwdStatusLabel.set_text("");
+            pwdStatusLabel.set_left(370);
+            pwdStatusLabel.set_top(160);
+            pwdStatusLabel.set_width(200);
+            pwdStatusLabel.set_height(25);
+            pwdStatusLabel.set_font("12px Arial");
+            
+            // 비밀번호 확인
+            var pwdConfirmLabel = new nexacro.Label("pwdConfirmLabel");
+            pwdConfirmLabel.set_text("비밀번호 확인 *:");
+            pwdConfirmLabel.set_left(50);
+            pwdConfirmLabel.set_top(200);
+            pwdConfirmLabel.set_width(100);
+            pwdConfirmLabel.set_height(25);
+            pwdConfirmLabel.set_font("bold 12px Arial");
+            
+            var pwdConfirmText = new nexacro.TextBox("pwdConfirmText");
+            pwdConfirmText.set_left(160);
+            pwdConfirmText.set_top(200);
+            pwdConfirmText.set_width(200);
+            pwdConfirmText.set_height(25);
+            pwdConfirmText.set_placeholder("비밀번호를 다시 입력하세요");
+            pwdConfirmText.set_inputtype("password");
+            
+            var pwdConfirmStatusLabel = new nexacro.Label("pwdConfirmStatusLabel");
+            pwdConfirmStatusLabel.set_text("");
+            pwdConfirmStatusLabel.set_left(370);
+            pwdConfirmStatusLabel.set_top(200);
+            pwdConfirmStatusLabel.set_width(200);
+            pwdConfirmStatusLabel.set_height(25);
+            pwdConfirmStatusLabel.set_font("12px Arial");
+            
+            // 이름 입력
+            var nameLabel = new nexacro.Label("nameLabel");
+            nameLabel.set_text("이름 *:");
+            nameLabel.set_left(50);
+            nameLabel.set_top(240);
+            nameLabel.set_width(100);
+            nameLabel.set_height(25);
+            nameLabel.set_font("bold 12px Arial");
+            
+            var nameText = new nexacro.TextBox("nameText");
+            nameText.set_left(160);
+            nameText.set_top(240);
+            nameText.set_width(200);
+            nameText.set_height(25);
+            nameText.set_placeholder("한글 2-10자");
+            
+            var nameStatusLabel = new nexacro.Label("nameStatusLabel");
+            nameStatusLabel.set_text("");
+            nameStatusLabel.set_left(370);
+            nameStatusLabel.set_top(240);
+            nameStatusLabel.set_width(200);
+            nameStatusLabel.set_height(25);
+            nameStatusLabel.set_font("12px Arial");
+            
+            // 이메일 입력
+            var emailLabel = new nexacro.Label("emailLabel");
+            emailLabel.set_text("이메일 *:");
+            emailLabel.set_left(50);
+            emailLabel.set_top(280);
+            emailLabel.set_width(100);
+            emailLabel.set_height(25);
+            emailLabel.set_font("bold 12px Arial");
+            
+            var emailText = new nexacro.TextBox("emailText");
+            emailText.set_left(160);
+            emailText.set_top(280);
+            emailText.set_width(200);
+            emailText.set_height(25);
+            emailText.set_placeholder("example@domain.com");
+            emailText.set_inputtype("email");
+            
+            var emailStatusLabel = new nexacro.Label("emailStatusLabel");
+            emailStatusLabel.set_text("");
+            emailStatusLabel.set_left(370);
+            emailStatusLabel.set_top(280);
+            emailStatusLabel.set_width(200);
+            emailStatusLabel.set_height(25);
+            emailStatusLabel.set_font("12px Arial");
+            
+            // 전화번호 입력
+            var phoneLabel = new nexacro.Label("phoneLabel");
+            phoneLabel.set_text("전화번호 *:");
+            phoneLabel.set_left(50);
+            phoneLabel.set_top(320);
+            phoneLabel.set_width(100);
+            phoneLabel.set_height(25);
+            phoneLabel.set_font("bold 12px Arial");
+            
+            var phoneText = new nexacro.TextBox("phoneText");
+            phoneText.set_left(160);
+            phoneText.set_top(320);
+            phoneText.set_width(200);
+            phoneText.set_height(25);
+            phoneText.set_placeholder("010-1234-5678");
+            
+            var phoneStatusLabel = new nexacro.Label("phoneStatusLabel");
+            phoneStatusLabel.set_text("");
+            phoneStatusLabel.set_left(370);
+            phoneStatusLabel.set_top(320);
+            phoneStatusLabel.set_width(200);
+            phoneStatusLabel.set_height(25);
+            phoneStatusLabel.set_font("12px Arial");
+            
+            // 나이 입력
+            var ageLabel = new nexacro.Label("ageLabel");
+            ageLabel.set_text("나이:");
+            ageLabel.set_left(50);
+            ageLabel.set_top(360);
+            ageLabel.set_width(100);
+            ageLabel.set_height(25);
+            ageLabel.set_font("bold 12px Arial");
+            
+            var ageText = new nexacro.TextBox("ageText");
+            ageText.set_left(160);
+            ageText.set_top(360);
+            ageText.set_width(200);
+            ageText.set_height(25);
+            ageText.set_placeholder("1-150");
+            ageText.set_inputtype("number");
+            
+            var ageStatusLabel = new nexacro.Label("ageStatusLabel");
+            ageStatusLabel.set_text("");
+            ageStatusLabel.set_left(370);
+            ageStatusLabel.set_top(360);
+            ageStatusLabel.set_width(200);
+            ageStatusLabel.set_height(25);
+            ageStatusLabel.set_font("12px Arial");
+            
+            // 성별 선택
+            var genderLabel = new nexacro.Label("genderLabel");
+            genderLabel.set_text("성별:");
+            genderLabel.set_left(50);
+            genderLabel.set_top(400);
+            genderLabel.set_width(100);
+            genderLabel.set_height(25);
+            genderLabel.set_font("bold 12px Arial");
+            
+            var maleRadio = new nexacro.RadioButton("maleRadio");
+            maleRadio.set_text("남성");
+            maleRadio.set_left(160);
+            maleRadio.set_top(400);
+            maleRadio.set_width(80);
+            maleRadio.set_height(25);
+            maleRadio.set_value("male");
+            
+            var femaleRadio = new nexacro.RadioButton("femaleRadio");
+            femaleRadio.set_text("여성");
+            femaleRadio.set_left(250);
+            femaleRadio.set_top(400);
+            femaleRadio.set_width(80);
+            femaleRadio.set_height(25);
+            femaleRadio.set_value("female");
+            
+            // 같은 그룹으로 설정
+            maleRadio.set_group("genderGroup");
+            femaleRadio.set_group("genderGroup");
+            
+            // 버튼들
+            var validateButton = new nexacro.Button("validateButton");
+            validateButton.set_text("실시간 검증");
+            validateButton.set_left(50);
+            validateButton.set_top(450);
+            validateButton.set_width(120);
+            validateButton.set_height(35);
+            validateButton.set_background("lightblue");
+            
+            var submitButton = new nexacro.Button("submitButton");
+            submitButton.set_text("회원가입");
+            submitButton.set_left(180);
+            submitButton.set_top(450);
+            submitButton.set_width(120);
+            submitButton.set_height(35);
+            submitButton.set_background("lightgreen");
+            
+            var clearButton = new nexacro.Button("clearButton");
+            clearButton.set_text("초기화");
+            clearButton.set_left(310);
+            clearButton.set_top(450);
+            clearButton.set_width(120);
+            clearButton.set_height(35);
+            clearButton.set_background("lightgray");
+            
+            /*
+                ===== 3단계: 검증 함수들 =====
+            */
+            
+            /*
+                아이디 검증 함수
+            */
+            function validateId(id) {
+                if (!id || id.trim() === "") {
+                    return { isValid: false, message: "아이디를 입력해주세요" };
+                }
+                
+                if (id.length < 4 || id.length > 20) {
+                    return { isValid: false, message: "아이디는 4-20자여야 합니다" };
+                }
+                
+                if (!/^[a-zA-Z0-9]+$/.test(id)) {
+                    return { isValid: false, message: "아이디는 영문과 숫자만 사용 가능합니다" };
+                }
+                
+                // 중복 체크 시뮬레이션
+                var existingIds = ["admin", "user", "test", "demo"];
+                if (existingIds.indexOf(id.toLowerCase()) !== -1) {
+                    return { isValid: false, message: "이미 사용 중인 아이디입니다" };
+                }
+                
+                return { isValid: true, message: "사용 가능한 아이디입니다" };
+            }
+            
+            /*
+                비밀번호 검증 함수
+            */
+            function validatePassword(password) {
+                if (!password || password.trim() === "") {
+                    return { isValid: false, message: "비밀번호를 입력해주세요" };
+                }
+                
+                if (password.length < 8 || password.length > 20) {
+                    return { isValid: false, message: "비밀번호는 8-20자여야 합니다" };
+                }
+                
+                if (!/(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/.test(password)) {
+                    return { isValid: false, message: "영문, 숫자, 특수문자를 포함해야 합니다" };
+                }
+                
+                return { isValid: true, message: "안전한 비밀번호입니다" };
+            }
+            
+            /*
+                비밀번호 확인 검증 함수
+            */
+            function validatePasswordConfirm(password, passwordConfirm) {
+                if (!passwordConfirm || passwordConfirm.trim() === "") {
+                    return { isValid: false, message: "비밀번호 확인을 입력해주세요" };
+                }
+                
+                if (password !== passwordConfirm) {
+                    return { isValid: false, message: "비밀번호가 일치하지 않습니다" };
+                }
+                
+                return { isValid: true, message: "비밀번호가 일치합니다" };
+            }
+            
+            /*
+                이름 검증 함수
+            */
+            function validateName(name) {
+                if (!name || name.trim() === "") {
+                    return { isValid: false, message: "이름을 입력해주세요" };
+                }
+                
+                if (name.length < 2 || name.length > 10) {
+                    return { isValid: false, message: "이름은 2-10자여야 합니다" };
+                }
+                
+                if (!/^[가-힣]+$/.test(name)) {
+                    return { isValid: false, message: "이름은 한글만 사용 가능합니다" };
+                }
+                
+                return { isValid: true, message: "올바른 이름입니다" };
+            }
+            
+            /*
+                이메일 검증 함수
+            */
+            function validateEmail(email) {
+                if (!email || email.trim() === "") {
+                    return { isValid: false, message: "이메일을 입력해주세요" };
+                }
+                
+                var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    return { isValid: false, message: "올바른 이메일 형식이 아닙니다" };
+                }
+                
+                return { isValid: true, message: "올바른 이메일입니다" };
+            }
+            
+            /*
+                전화번호 검증 함수
+            */
+            function validatePhone(phone) {
+                if (!phone || phone.trim() === "") {
+                    return { isValid: false, message: "전화번호를 입력해주세요" };
+                }
+                
+                var phoneRegex = /^010-\d{4}-\d{4}$/;
+                if (!phoneRegex.test(phone)) {
+                    return { isValid: false, message: "010-XXXX-XXXX 형식으로 입력해주세요" };
+                }
+                
+                return { isValid: true, message: "올바른 전화번호입니다" };
+            }
+            
+            /*
+                나이 검증 함수
+            */
+            function validateAge(age) {
+                if (!age || age.trim() === "") {
+                    return { isValid: true, message: "나이는 선택사항입니다" };
+                }
+                
+                var ageNum = parseInt(age);
+                if (isNaN(ageNum)) {
+                    return { isValid: false, message: "나이는 숫자여야 합니다" };
+                }
+                
+                if (ageNum < 1 || ageNum > 150) {
+                    return { isValid: false, message: "나이는 1-150 사이여야 합니다" };
+                }
+                
+                return { isValid: true, message: "올바른 나이입니다" };
+            }
+            
+            /*
+                상태 라벨 업데이트 함수
+            */
+            function updateStatusLabel(statusLabel, result) {
+                statusLabel.set_text(result.message);
+                if (result.isValid) {
+                    statusLabel.set_color("darkgreen");
+                } else {
+                    statusLabel.set_color("darkred");
+                }
+            }
+            
+            /*
+                메시지 표시 함수
+            */
+            function showMessage(message, isError) {
+                // 기존 메시지 숨기기
+                errorLabel.set_visible(false);
+                successLabel.set_visible(false);
+                
+                if (isError) {
+                    errorLabel.set_text(message);
+                    errorLabel.set_visible(true);
+                } else {
+                    successLabel.set_text(message);
+                    successLabel.set_visible(true);
+                }
+                
+                // 3초 후 메시지 숨기기
+                setTimeout(function() {
+                    errorLabel.set_visible(false);
+                    successLabel.set_visible(false);
+                }, 3000);
+            }
+            
+            /*
+                전체 폼 검증 함수
+            */
+            function validateAllFields() {
+                var id = idText.get_text();
+                var password = pwdText.get_text();
+                var passwordConfirm = pwdConfirmText.get_text();
+                var name = nameText.get_text();
+                var email = emailText.get_text();
+                var phone = phoneText.get_text();
+                var age = ageText.get_text();
+                
+                var results = {
+                    id: validateId(id),
+                    password: validatePassword(password),
+                    passwordConfirm: validatePasswordConfirm(password, passwordConfirm),
+                    name: validateName(name),
+                    email: validateEmail(email),
+                    phone: validatePhone(phone),
+                    age: validateAge(age)
+                };
+                
+                // 각 필드의 상태 업데이트
+                updateStatusLabel(idStatusLabel, results.id);
+                updateStatusLabel(pwdStatusLabel, results.password);
+                updateStatusLabel(pwdConfirmStatusLabel, results.passwordConfirm);
+                updateStatusLabel(nameStatusLabel, results.name);
+                updateStatusLabel(emailStatusLabel, results.email);
+                updateStatusLabel(phoneStatusLabel, results.phone);
+                updateStatusLabel(ageStatusLabel, results.age);
+                
+                // 전체 검증 결과 확인
+                var allValid = true;
+                var errorMessages = [];
+                
+                for (var field in results) {
+                    if (!results[field].isValid) {
+                        allValid = false;
+                        errorMessages.push(results[field].message);
+                    }
+                }
+                
+                if (allValid) {
+                    showMessage("모든 입력이 올바릅니다! 회원가입을 진행할 수 있습니다.", false);
+                    return true;
+                } else {
+                    showMessage("입력 오류가 있습니다: " + errorMessages.join(", "), true);
+                    return false;
+                }
+            }
+            
+            /*
+                폼 초기화 함수
+            */
+            function clearForm() {
+                idText.set_text("");
+                pwdText.set_text("");
+                pwdConfirmText.set_text("");
+                nameText.set_text("");
+                emailText.set_text("");
+                phoneText.set_text("");
+                ageText.set_text("");
+                maleRadio.set_checked(false);
+                femaleRadio.set_checked(false);
+                
+                // 상태 라벨들 초기화
+                idStatusLabel.set_text("");
+                pwdStatusLabel.set_text("");
+                pwdConfirmStatusLabel.set_text("");
+                nameStatusLabel.set_text("");
+                emailStatusLabel.set_text("");
+                phoneStatusLabel.set_text("");
+                ageStatusLabel.set_text("");
+                
+                // 메시지 숨기기
+                errorLabel.set_visible(false);
+                successLabel.set_visible(false);
+            }
+            
+            /*
+                ===== 4단계: 이벤트 핸들러 연결 =====
+            */
+            
+            // 실시간 검증 버튼
+            validateButton.addEventHandler("onclick", function() {
+                validateAllFields();
+            });
+            
+            // 회원가입 버튼
+            submitButton.addEventHandler("onclick", function() {
+                if (validateAllFields()) {
+                    // 실제로는 서버에 데이터 전송
+                    showMessage("회원가입이 완료되었습니다!", false);
+                    clearForm();
+                }
+            });
+            
+            // 초기화 버튼
+            clearButton.addEventHandler("onclick", function() {
+                if (confirm("입력한 모든 정보를 삭제하시겠습니까?")) {
+                    clearForm();
+                }
+            });
+            
+            // 실시간 검증 이벤트들
+            idText.addEventHandler("onchanged", function() {
+                var result = validateId(idText.get_text());
+                updateStatusLabel(idStatusLabel, result);
+            });
+            
+            pwdText.addEventHandler("onchanged", function() {
+                var result = validatePassword(pwdText.get_text());
+                updateStatusLabel(pwdStatusLabel, result);
+                
+                // 비밀번호 확인도 다시 검증
+                if (pwdConfirmText.get_text()) {
+                    var confirmResult = validatePasswordConfirm(pwdText.get_text(), pwdConfirmText.get_text());
+                    updateStatusLabel(pwdConfirmStatusLabel, confirmResult);
+                }
+            });
+            
+            pwdConfirmText.addEventHandler("onchanged", function() {
+                var result = validatePasswordConfirm(pwdText.get_text(), pwdConfirmText.get_text());
+                updateStatusLabel(pwdConfirmStatusLabel, result);
+            });
+            
+            nameText.addEventHandler("onchanged", function() {
+                var result = validateName(nameText.get_text());
+                updateStatusLabel(nameStatusLabel, result);
+            });
+            
+            emailText.addEventHandler("onchanged", function() {
+                var result = validateEmail(emailText.get_text());
+                updateStatusLabel(emailStatusLabel, result);
+            });
+            
+            phoneText.addEventHandler("onchanged", function() {
+                var result = validatePhone(phoneText.get_text());
+                updateStatusLabel(phoneStatusLabel, result);
+            });
+            
+            ageText.addEventHandler("onchanged", function() {
+                var result = validateAge(ageText.get_text());
+                updateStatusLabel(ageStatusLabel, result);
+            });
+            
+            /*
+                ===== 5단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(errorLabel);
+            this.add(successLabel);
+            this.add(idLabel);
+            this.add(idText);
+            this.add(idStatusLabel);
+            this.add(pwdLabel);
+            this.add(pwdText);
+            this.add(pwdStatusLabel);
+            this.add(pwdConfirmLabel);
+            this.add(pwdConfirmText);
+            this.add(pwdConfirmStatusLabel);
+            this.add(nameLabel);
+            this.add(nameText);
+            this.add(nameStatusLabel);
+            this.add(emailLabel);
+            this.add(emailText);
+            this.add(emailStatusLabel);
+            this.add(phoneLabel);
+            this.add(phoneText);
+            this.add(phoneStatusLabel);
+            this.add(ageLabel);
+            this.add(ageText);
+            this.add(ageStatusLabel);
+            this.add(genderLabel);
+            this.add(maleRadio);
+            this.add(femaleRadio);
+            this.add(validateButton);
+            this.add(submitButton);
+            this.add(clearButton);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 것들:
+                
+                1. 입력 검증:
+                   - 정규식을 이용한 패턴 검증
+                   - 길이, 형식, 중복 체크
+                   - 실시간 검증과 전체 검증
+                
+                2. 에러 처리:
+                   - 사용자 친화적인 에러 메시지
+                   - 시각적 피드백 (색상, 아이콘)
+                   - 에러 메시지 자동 숨김
+                
+                3. 사용자 경험 개선:
+                   - 실시간 검증으로 즉시 피드백
+                   - 명확한 입력 가이드 (placeholder)
+                   - 성공/실패 메시지 구분
+                
+                4. 예외 상황 처리:
+                   - 빈 값, 잘못된 형식, 범위 초과
+                   - 사용자 실수 방지
+                   - 데이터 무결성 보장
+                
+                5. 폼 관리:
+                   - 전체 검증과 개별 검증
+                   - 폼 초기화와 상태 관리
+                   - 사용자 확인 대화상자
+                
+                실제 프로젝트에서는:
+                - 서버 측 검증과 연동
+                - 더 복잡한 비즈니스 규칙
+                - 다국어 지원
+                - 접근성 고려
+                
+                이제 안전하고 사용자 친화적인 입력 폼을 만들 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>

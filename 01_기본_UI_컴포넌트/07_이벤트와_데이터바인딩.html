@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 이벤트와 데이터바인딩</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 이벤트와 데이터바인딩 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 다양한 이벤트 처리 방법
+            2. 컴포넌트 간 데이터 연결 (데이터바인딩)
+            3. 실시간 데이터 업데이트
+            4. 이벤트 체이닝 (한 이벤트가 다른 이벤트를 발생시키는 것)
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 데이터 저장소 만들기 =====
+                데이터셋은 마치 엑셀 테이블과 같습니다
+                여러 개의 행과 열로 데이터를 저장할 수 있습니다
+            */
+            var userDataset = new nexacro.Dataset("userDataset");
+            
+            /*
+                데이터셋에 컬럼(열)을 추가합니다
+                각 컬럼은 데이터의 종류를 나타냅니다
+            */
+            userDataset.addColumn("name", "string");      // 이름 (문자열)
+            userDataset.addColumn("age", "number");       // 나이 (숫자)
+            userDataset.addColumn("city", "string");      // 도시 (문자열)
+            userDataset.addColumn("score", "number");     // 점수 (숫자)
+            
+            /*
+                샘플 데이터를 추가합니다
+                addRow()로 새 행을 만들고, setCellData()로 각 셀에 데이터를 넣습니다
+            */
+            userDataset.addRow();
+            userDataset.setCellData(0, "name", "김철수");
+            userDataset.setCellData(0, "age", 25);
+            userDataset.setCellData(0, "city", "서울");
+            userDataset.setCellData(0, "score", 85);
+            
+            userDataset.addRow();
+            userDataset.setCellData(1, "name", "이영희");
+            userDataset.setCellData(1, "age", 23);
+            userDataset.setCellData(1, "city", "부산");
+            userDataset.setCellData(1, "score", 92);
+            
+            userDataset.addRow();
+            userDataset.setCellData(2, "name", "박민수");
+            userDataset.setCellData(2, "age", 27);
+            userDataset.setCellData(2, "city", "대구");
+            userDataset.setCellData(2, "score", 78);
+            
+            /*
+                ===== 2단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목 라벨
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("사용자 정보 관리 시스템");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(400);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            
+            // 그리드 (데이터를 표 형태로 보여주는 컴포넌트)
+            var userGrid = new nexacro.Grid("userGrid");
+            userGrid.set_left(50);
+            userGrid.set_top(80);
+            userGrid.set_width(500);
+            userGrid.set_height(200);
+            userGrid.set_border("2px solid #ccc");
+            
+            /*
+                그리드에 컬럼을 추가합니다
+                addColumn(컬럼ID, 컬럼제목, 너비) 형식입니다
+            */
+            userGrid.addColumn("name", "이름", 100);
+            userGrid.addColumn("age", "나이", 80);
+            userGrid.addColumn("city", "도시", 100);
+            userGrid.addColumn("score", "점수", 80);
+            
+            /*
+                ===== 3단계: 데이터바인딩 설정 =====
+                데이터바인딩은 그리드와 데이터셋을 연결하는 것입니다
+                데이터셋의 데이터가 변경되면 그리드도 자동으로 업데이트됩니다
+            */
+            userGrid.set_dataset(userDataset);
+            
+            /*
+                ===== 4단계: 입력 폼 만들기 =====
+            */
+            var formLabel = new nexacro.Label("formLabel");
+            formLabel.set_text("새 사용자 추가:");
+            formLabel.set_left(50);
+            formLabel.set_top(300);
+            formLabel.set_width(200);
+            formLabel.set_height(30);
+            formLabel.set_font("bold 14px Arial");
+            
+            // 이름 입력
+            var nameLabel = new nexacro.Label("nameLabel");
+            nameLabel.set_text("이름:");
+            nameLabel.set_left(50);
+            nameLabel.set_top(340);
+            nameLabel.set_width(50);
+            nameLabel.set_height(25);
+            
+            var nameText = new nexacro.TextBox("nameText");
+            nameText.set_left(110);
+            nameText.set_top(340);
+            nameText.set_width(100);
+            nameText.set_height(25);
+            
+            // 나이 입력
+            var ageLabel = new nexacro.Label("ageLabel");
+            ageLabel.set_text("나이:");
+            ageLabel.set_left(220);
+            ageLabel.set_top(340);
+            ageLabel.set_width(50);
+            ageLabel.set_height(25);
+            
+            var ageText = new nexacro.TextBox("ageText");
+            ageText.set_left(280);
+            ageText.set_top(340);
+            ageText.set_width(60);
+            ageText.set_height(25);
+            ageText.set_inputtype("number");
+            
+            // 도시 선택
+            var cityLabel = new nexacro.Label("cityLabel");
+            cityLabel.set_text("도시:");
+            cityLabel.set_left(350);
+            cityLabel.set_top(340);
+            cityLabel.set_width(50);
+            cityLabel.set_height(25);
+            
+            var cityCombo = new nexacro.ComboBox("cityCombo");
+            cityCombo.set_left(410);
+            cityCombo.set_top(340);
+            cityCombo.set_width(100);
+            cityCombo.set_height(25);
+            cityCombo.addItem("서울", "seoul");
+            cityCombo.addItem("부산", "busan");
+            cityCombo.addItem("대구", "daegu");
+            cityCombo.addItem("인천", "incheon");
+            cityCombo.addItem("광주", "gwangju");
+            
+            // 점수 입력
+            var scoreLabel = new nexacro.Label("scoreLabel");
+            scoreLabel.set_text("점수:");
+            scoreLabel.set_left(50);
+            scoreLabel.set_top(380);
+            scoreLabel.set_width(50);
+            scoreLabel.set_height(25);
+            
+            var scoreText = new nexacro.TextBox("scoreText");
+            scoreText.set_left(110);
+            scoreText.set_top(380);
+            scoreText.set_width(80);
+            scoreText.set_height(25);
+            scoreText.set_inputtype("number");
+            
+            /*
+                ===== 5단계: 버튼들 만들기 =====
+            */
+            var addButton = new nexacro.Button("addButton");
+            addButton.set_text("추가");
+            addButton.set_left(200);
+            addButton.set_top(380);
+            addButton.set_width(80);
+            addButton.set_height(30);
+            addButton.set_background("lightgreen");
+            
+            var deleteButton = new nexacro.Button("deleteButton");
+            deleteButton.set_text("삭제");
+            deleteButton.set_left(290);
+            deleteButton.set_top(380);
+            deleteButton.set_width(80);
+            deleteButton.set_height(30);
+            deleteButton.set_background("lightcoral");
+            
+            var clearButton = new nexacro.Button("clearButton");
+            clearButton.set_text("전체삭제");
+            clearButton.set_left(380);
+            clearButton.set_top(380);
+            clearButton.set_width(80);
+            clearButton.set_height(30);
+            clearButton.set_background("lightgray");
+            
+            /*
+                ===== 6단계: 통계 정보 표시 라벨 =====
+            */
+            var statsLabel = new nexacro.Label("statsLabel");
+            statsLabel.set_text("통계 정보가 여기에 표시됩니다");
+            statsLabel.set_left(50);
+            statsLabel.set_top(430);
+            statsLabel.set_width(500);
+            statsLabel.set_height(60);
+            statsLabel.set_background("lightyellow");
+            statsLabel.set_border("1px solid #ccc");
+            
+            /*
+                ===== 7단계: 이벤트 처리 함수들 =====
+            */
+            
+            /*
+                통계 정보를 업데이트하는 함수
+                이 함수는 데이터가 변경될 때마다 호출됩니다
+            */
+            function updateStatistics() {
+                var rowCount = userDataset.getRowCount();
+                var totalScore = 0;
+                var maxScore = 0;
+                var minScore = 100;
+                
+                // 모든 행을 돌면서 점수를 계산합니다
+                for (var i = 0; i < rowCount; i++) {
+                    var score = userDataset.getCellData(i, "score");
+                    totalScore += score;
+                    if (score > maxScore) maxScore = score;
+                    if (score < minScore) minScore = score;
+                }
+                
+                var avgScore = rowCount > 0 ? (totalScore / rowCount).toFixed(1) : 0;
+                
+                var statsText = "총 사용자 수: " + rowCount + "명 | ";
+                statsText += "평균 점수: " + avgScore + "점 | ";
+                statsText += "최고 점수: " + maxScore + "점 | ";
+                statsText += "최저 점수: " + minScore + "점";
+                
+                statsLabel.set_text(statsText);
+            }
+            
+            /*
+                입력 필드를 초기화하는 함수
+            */
+            function clearInputFields() {
+                nameText.set_text("");
+                ageText.set_text("");
+                cityCombo.set_text("");
+                scoreText.set_text("");
+            }
+            
+            /*
+                입력 데이터를 검증하는 함수
+            */
+            function validateInput() {
+                if (nameText.get_text().trim() == "") {
+                    alert("이름을 입력해주세요!");
+                    nameText.focus();
+                    return false;
+                }
+                if (ageText.get_text().trim() == "") {
+                    alert("나이를 입력해주세요!");
+                    ageText.focus();
+                    return false;
+                }
+                if (cityCombo.get_text() == "") {
+                    alert("도시를 선택해주세요!");
+                    cityCombo.focus();
+                    return false;
+                }
+                if (scoreText.get_text().trim() == "") {
+                    alert("점수를 입력해주세요!");
+                    scoreText.focus();
+                    return false;
+                }
+                
+                var age = parseInt(ageText.get_text());
+                var score = parseInt(scoreText.get_text());
+                
+                if (age < 1 || age > 150) {
+                    alert("나이는 1~150 사이의 숫자를 입력해주세요!");
+                    ageText.focus();
+                    return false;
+                }
+                
+                if (score < 0 || score > 100) {
+                    alert("점수는 0~100 사이의 숫자를 입력해주세요!");
+                    scoreText.focus();
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            /*
+                ===== 8단계: 이벤트 핸들러 연결 =====
+            */
+            
+            /*
+                그리드에서 행이 선택될 때의 이벤트
+                사용자가 그리드에서 다른 행을 클릭하면 발생합니다
+            */
+            userGrid.addEventHandler("onrowchanged", function() {
+                var selectedRow = userGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    // 선택된 행의 데이터를 입력 필드에 표시
+                    nameText.set_text(userDataset.getCellData(selectedRow, "name"));
+                    ageText.set_text(userDataset.getCellData(selectedRow, "age"));
+                    cityCombo.set_text(userDataset.getCellData(selectedRow, "city"));
+                    scoreText.set_text(userDataset.getCellData(selectedRow, "score"));
+                }
+            });
+            
+            /*
+                추가 버튼 클릭 이벤트
+            */
+            addButton.addEventHandler("onclick", function() {
+                if (validateInput()) {
+                    // 새 행을 데이터셋에 추가
+                    var newRow = userDataset.addRow();
+                    userDataset.setCellData(newRow, "name", nameText.get_text());
+                    userDataset.setCellData(newRow, "age", parseInt(ageText.get_text()));
+                    userDataset.setCellData(newRow, "city", cityCombo.get_text());
+                    userDataset.setCellData(newRow, "score", parseInt(scoreText.get_text()));
+                    
+                    // 입력 필드 초기화
+                    clearInputFields();
+                    
+                    // 통계 정보 업데이트
+                    updateStatistics();
+                    
+                    alert("새 사용자가 추가되었습니다!");
+                }
+            });
+            
+            /*
+                삭제 버튼 클릭 이벤트
+            */
+            deleteButton.addEventHandler("onclick", function() {
+                var selectedRow = userGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    var userName = userDataset.getCellData(selectedRow, "name");
+                    if (confirm(userName + "님의 정보를 삭제하시겠습니까?")) {
+                        userDataset.removeRow(selectedRow);
+                        clearInputFields();
+                        updateStatistics();
+                        alert("사용자 정보가 삭제되었습니다!");
+                    }
+                } else {
+                    alert("삭제할 사용자를 먼저 선택해주세요!");
+                }
+            });
+            
+            /*
+                전체 삭제 버튼 클릭 이벤트
+            */
+            clearButton.addEventHandler("onclick", function() {
+                if (confirm("모든 사용자 정보를 삭제하시겠습니까?")) {
+                    userDataset.clear();
+                    clearInputFields();
+                    updateStatistics();
+                    alert("모든 사용자 정보가 삭제되었습니다!");
+                }
+            });
+            
+            /*
+                데이터셋 변경 이벤트
+                데이터셋의 데이터가 변경될 때마다 자동으로 호출됩니다
+            */
+            userDataset.addEventHandler("onrowadded", function() {
+                updateStatistics();
+            });
+            
+            userDataset.addEventHandler("onrowremoved", function() {
+                updateStatistics();
+            });
+            
+            /*
+                ===== 9단계: 초기 통계 정보 표시 =====
+            */
+            updateStatistics();
+            
+            /*
+                ===== 10단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(userGrid);
+            this.add(formLabel);
+            this.add(nameLabel);
+            this.add(nameText);
+            this.add(ageLabel);
+            this.add(ageText);
+            this.add(cityLabel);
+            this.add(cityCombo);
+            this.add(scoreLabel);
+            this.add(scoreText);
+            this.add(addButton);
+            this.add(deleteButton);
+            this.add(clearButton);
+            this.add(statsLabel);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 것들:
+                
+                1. 데이터셋 사용법:
+                   - 데이터를 저장하고 관리하는 방법
+                   - 컬럼 추가, 행 추가/삭제
+                
+                2. 데이터바인딩:
+                   - 그리드와 데이터셋을 연결하는 방법
+                   - 데이터 변경 시 자동 업데이트
+                
+                3. 이벤트 처리:
+                   - 다양한 이벤트 타입 (onclick, onrowchanged, onrowadded 등)
+                   - 이벤트 체이닝 (한 이벤트가 다른 이벤트를 발생시키는 것)
+                
+                4. 실시간 데이터 업데이트:
+                   - 데이터 변경 시 통계 정보 자동 계산
+                   - 사용자 인터페이스 실시간 반영
+                
+                5. 입력 검증:
+                   - 사용자 입력 데이터의 유효성 검사
+                   - 에러 메시지 표시
+                
+                이제 더 복잡한 애플리케이션을 만들 수 있는 기초가 마련되었습니다!
+            */
+        }
+    </script>
+</body>
+</html>

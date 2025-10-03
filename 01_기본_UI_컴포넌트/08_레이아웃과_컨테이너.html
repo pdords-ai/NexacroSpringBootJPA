@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 레이아웃과 컨테이너</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 레이아웃과 컨테이너 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 컨테이너 컴포넌트 사용법
+            2. 다양한 레이아웃 방식 (절대 위치, 상대 위치, 자동 배치)
+            3. 컴포넌트 그룹핑과 관리
+            4. 반응형 레이아웃 만들기
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 메인 컨테이너 만들기 =====
+                컨테이너는 다른 컴포넌트들을 담는 상자와 같습니다
+                마치 책상 위에 여러 물건들을 정리해서 놓는 것과 같습니다
+            */
+            var mainContainer = new nexacro.Container("mainContainer");
+            mainContainer.set_left(10);
+            mainContainer.set_top(10);
+            mainContainer.set_width(800);
+            mainContainer.set_height(600);
+            mainContainer.set_background("lightgray");
+            mainContainer.set_border("2px solid #333");
+            
+            /*
+                ===== 2단계: 헤더 영역 만들기 =====
+                헤더는 페이지의 상단 부분으로, 제목이나 메뉴를 넣는 곳입니다
+            */
+            var headerContainer = new nexacro.Container("headerContainer");
+            headerContainer.set_left(20);
+            headerContainer.set_top(20);
+            headerContainer.set_width(760);
+            headerContainer.set_height(80);
+            headerContainer.set_background("darkblue");
+            headerContainer.set_border("1px solid #000");
+            
+            // 헤더 제목
+            var headerTitle = new nexacro.Label("headerTitle");
+            headerTitle.set_text("Nexacro 레이아웃 예제");
+            headerTitle.set_left(20);
+            headerTitle.set_top(20);
+            headerTitle.set_width(400);
+            headerTitle.set_height(40);
+            headerTitle.set_font("bold 20px Arial");
+            headerTitle.set_color("white");
+            
+            // 헤더 버튼들
+            var homeButton = new nexacro.Button("homeButton");
+            homeButton.set_text("홈");
+            homeButton.set_left(500);
+            homeButton.set_top(20);
+            homeButton.set_width(60);
+            homeButton.set_height(30);
+            homeButton.set_background("lightblue");
+            
+            var aboutButton = new nexacro.Button("aboutButton");
+            aboutButton.set_text("소개");
+            aboutButton.set_left(570);
+            aboutButton.set_top(20);
+            aboutButton.set_width(60);
+            aboutButton.set_height(30);
+            aboutButton.set_background("lightblue");
+            
+            var contactButton = new nexacro.Button("contactButton");
+            contactButton.set_text("연락처");
+            contactButton.set_left(640);
+            contactButton.set_top(20);
+            contactButton.set_width(60);
+            contactButton.set_height(30);
+            contactButton.set_background("lightblue");
+            
+            /*
+                ===== 3단계: 사이드바 영역 만들기 =====
+                사이드바는 페이지의 옆쪽에 위치하는 메뉴나 정보를 표시하는 영역입니다
+            */
+            var sidebarContainer = new nexacro.Container("sidebarContainer");
+            sidebarContainer.set_left(20);
+            sidebarContainer.set_top(110);
+            sidebarContainer.set_width(200);
+            sidebarContainer.set_height(400);
+            sidebarContainer.set_background("lightgreen");
+            sidebarContainer.set_border("1px solid #000");
+            
+            // 사이드바 제목
+            var sidebarTitle = new nexacro.Label("sidebarTitle");
+            sidebarTitle.set_text("메뉴");
+            sidebarTitle.set_left(10);
+            sidebarTitle.set_top(10);
+            sidebarTitle.set_width(180);
+            sidebarTitle.set_height(30);
+            sidebarTitle.set_font("bold 16px Arial");
+            sidebarTitle.set_background("green");
+            sidebarTitle.set_color("white");
+            
+            // 사이드바 메뉴 항목들
+            var menuItem1 = new nexacro.Button("menuItem1");
+            menuItem1.set_text("대시보드");
+            menuItem1.set_left(10);
+            menuItem1.set_top(50);
+            menuItem1.set_width(180);
+            menuItem1.set_height(35);
+            menuItem1.set_background("white");
+            menuItem1.set_border("1px solid #ccc");
+            
+            var menuItem2 = new nexacro.Button("menuItem2");
+            menuItem2.set_text("사용자 관리");
+            menuItem2.set_left(10);
+            menuItem2.set_top(95);
+            menuItem2.set_width(180);
+            menuItem2.set_height(35);
+            menuItem2.set_background("white");
+            menuItem2.set_border("1px solid #ccc");
+            
+            var menuItem3 = new nexacro.Button("menuItem3");
+            menuItem3.set_text("설정");
+            menuItem3.set_left(10);
+            menuItem3.set_top(140);
+            menuItem3.set_width(180);
+            menuItem3.set_height(35);
+            menuItem3.set_background("white");
+            menuItem3.set_border("1px solid #ccc");
+            
+            var menuItem4 = new nexacro.Button("menuItem4");
+            menuItem4.set_text("도움말");
+            menuItem4.set_left(10);
+            menuItem4.set_top(185);
+            menuItem4.set_width(180);
+            menuItem4.set_height(35);
+            menuItem4.set_background("white");
+            menuItem4.set_border("1px solid #ccc");
+            
+            /*
+                ===== 4단계: 메인 콘텐츠 영역 만들기 =====
+                메인 콘텐츠 영역은 페이지의 중심 부분으로, 실제 내용을 표시하는 곳입니다
+            */
+            var contentContainer = new nexacro.Container("contentContainer");
+            contentContainer.set_left(230);
+            contentContainer.set_top(110);
+            contentContainer.set_width(550);
+            contentContainer.set_height(400);
+            contentContainer.set_background("white");
+            contentContainer.set_border("1px solid #000");
+            
+            // 콘텐츠 제목
+            var contentTitle = new nexacro.Label("contentTitle");
+            contentTitle.set_text("메인 콘텐츠 영역");
+            contentTitle.set_left(20);
+            contentTitle.set_top(20);
+            contentTitle.set_width(510);
+            contentTitle.set_height(40);
+            contentTitle.set_font("bold 18px Arial");
+            contentTitle.set_background("lightblue");
+            contentTitle.set_color("darkblue");
+            
+            // 콘텐츠 텍스트
+            var contentText = new nexacro.Label("contentText");
+            contentText.set_text("여기는 메인 콘텐츠가 표시되는 영역입니다.\n\n" +
+                               "이 영역에는 다음과 같은 내용들이 들어갈 수 있습니다:\n" +
+                               "• 데이터 테이블\n" +
+                               "• 차트나 그래프\n" +
+                               "• 폼 입력 필드들\n" +
+                               "• 이미지나 멀티미디어\n" +
+                               "• 기타 다양한 UI 컴포넌트들\n\n" +
+                               "사이드바의 메뉴를 클릭하면 이 영역의 내용이 변경됩니다.");
+            contentText.set_left(20);
+            contentText.set_top(70);
+            contentText.set_width(510);
+            contentText.set_height(200);
+            contentText.set_font("14px Arial");
+            contentText.set_background("lightyellow");
+            contentText.set_border("1px solid #ccc");
+            
+            // 콘텐츠 버튼들
+            var refreshButton = new nexacro.Button("refreshButton");
+            refreshButton.set_text("새로고침");
+            refreshButton.set_left(20);
+            refreshButton.set_top(280);
+            refreshButton.set_width(100);
+            refreshButton.set_height(30);
+            refreshButton.set_background("lightgreen");
+            
+            var saveButton = new nexacro.Button("saveButton");
+            saveButton.set_text("저장");
+            saveButton.set_left(130);
+            saveButton.set_top(280);
+            saveButton.set_width(100);
+            saveButton.set_height(30);
+            saveButton.set_background("lightblue");
+            
+            var cancelButton = new nexacro.Button("cancelButton");
+            cancelButton.set_text("취소");
+            cancelButton.set_left(240);
+            cancelButton.set_top(280);
+            cancelButton.set_width(100);
+            cancelButton.set_height(30);
+            cancelButton.set_background("lightcoral");
+            
+            /*
+                ===== 5단계: 푸터 영역 만들기 =====
+                푸터는 페이지의 하단 부분으로, 저작권 정보나 추가 링크를 넣는 곳입니다
+            */
+            var footerContainer = new nexacro.Container("footerContainer");
+            footerContainer.set_left(20);
+            footerContainer.set_top(520);
+            footerContainer.set_width(760);
+            footerContainer.set_height(60);
+            footerContainer.set_background("darkgray");
+            footerContainer.set_border("1px solid #000");
+            
+            // 푸터 텍스트
+            var footerText = new nexacro.Label("footerText");
+            footerText.set_text("© 2024 Nexacro 예제. 모든 권리 보유. | 문의: example@nexacro.com");
+            footerText.set_left(20);
+            footerText.set_top(20);
+            footerText.set_width(720);
+            footerText.set_height(20);
+            footerText.set_font("12px Arial");
+            footerText.set_color("white");
+            
+            /*
+                ===== 6단계: 상태바 만들기 =====
+                상태바는 현재 상태나 진행 상황을 보여주는 영역입니다
+            */
+            var statusBar = new nexacro.Label("statusBar");
+            statusBar.set_text("준비됨");
+            statusBar.set_left(20);
+            statusBar.set_top(590);
+            statusBar.set_width(760);
+            statusBar.set_height(20);
+            statusBar.set_background("lightgray");
+            statusBar.set_border("1px solid #ccc");
+            statusBar.set_font("12px Arial");
+            
+            /*
+                ===== 7단계: 이벤트 처리 함수들 =====
+            */
+            
+            /*
+                메뉴 항목 클릭 시 콘텐츠를 변경하는 함수
+            */
+            function changeContent(contentType) {
+                var contentTexts = {
+                    "dashboard": "대시보드 콘텐츠입니다.\n\n" +
+                               "여기에는 다음과 같은 정보들이 표시됩니다:\n" +
+                               "• 전체 사용자 수\n" +
+                               "• 오늘의 방문자 수\n" +
+                               "• 시스템 상태\n" +
+                               "• 최근 활동 내역",
+                    
+                    "users": "사용자 관리 콘텐츠입니다.\n\n" +
+                            "여기에서는 다음 작업들을 할 수 있습니다:\n" +
+                            "• 사용자 목록 조회\n" +
+                            "• 새 사용자 추가\n" +
+                            "• 사용자 정보 수정\n" +
+                            "• 사용자 삭제",
+                    
+                    "settings": "설정 콘텐츠입니다.\n\n" +
+                              "여기에서는 다음 설정들을 변경할 수 있습니다:\n" +
+                              "• 시스템 설정\n" +
+                              "• 사용자 권한 설정\n" +
+                              "• 알림 설정\n" +
+                              "• 보안 설정",
+                    
+                    "help": "도움말 콘텐츠입니다.\n\n" +
+                           "여기에서는 다음 정보들을 확인할 수 있습니다:\n" +
+                           "• 사용법 가이드\n" +
+                           "• 자주 묻는 질문\n" +
+                           "• 문의하기\n" +
+                           "• 버전 정보"
+                };
+                
+                contentText.set_text(contentTexts[contentType] || "콘텐츠를 찾을 수 없습니다.");
+                statusBar.set_text("현재 페이지: " + contentType);
+            }
+            
+            /*
+                ===== 8단계: 이벤트 핸들러 연결 =====
+            */
+            
+            // 헤더 버튼 이벤트
+            homeButton.addEventHandler("onclick", function() {
+                changeContent("dashboard");
+                alert("홈 버튼이 클릭되었습니다!");
+            });
+            
+            aboutButton.addEventHandler("onclick", function() {
+                alert("이 애플리케이션은 Nexacro 레이아웃 예제입니다.");
+            });
+            
+            contactButton.addEventHandler("onclick", function() {
+                alert("연락처: example@nexacro.com\n전화: 02-1234-5678");
+            });
+            
+            // 사이드바 메뉴 이벤트
+            menuItem1.addEventHandler("onclick", function() {
+                changeContent("dashboard");
+                // 메뉴 버튼 색상 변경 (선택된 메뉴 표시)
+                menuItem1.set_background("lightblue");
+                menuItem2.set_background("white");
+                menuItem3.set_background("white");
+                menuItem4.set_background("white");
+            });
+            
+            menuItem2.addEventHandler("onclick", function() {
+                changeContent("users");
+                menuItem1.set_background("white");
+                menuItem2.set_background("lightblue");
+                menuItem3.set_background("white");
+                menuItem4.set_background("white");
+            });
+            
+            menuItem3.addEventHandler("onclick", function() {
+                changeContent("settings");
+                menuItem1.set_background("white");
+                menuItem2.set_background("white");
+                menuItem3.set_background("lightblue");
+                menuItem4.set_background("white");
+            });
+            
+            menuItem4.addEventHandler("onclick", function() {
+                changeContent("help");
+                menuItem1.set_background("white");
+                menuItem2.set_background("white");
+                menuItem3.set_background("white");
+                menuItem4.set_background("lightblue");
+            });
+            
+            // 콘텐츠 버튼 이벤트
+            refreshButton.addEventHandler("onclick", function() {
+                statusBar.set_text("페이지를 새로고침하는 중...");
+                setTimeout(function() {
+                    statusBar.set_text("새로고침 완료");
+                }, 1000);
+            });
+            
+            saveButton.addEventHandler("onclick", function() {
+                statusBar.set_text("데이터를 저장하는 중...");
+                setTimeout(function() {
+                    statusBar.set_text("저장 완료");
+                }, 1500);
+            });
+            
+            cancelButton.addEventHandler("onclick", function() {
+                if (confirm("변경사항을 취소하시겠습니까?")) {
+                    statusBar.set_text("변경사항이 취소되었습니다");
+                }
+            });
+            
+            /*
+                ===== 9단계: 컨테이너에 컴포넌트들 추가 =====
+                각 컨테이너에 해당하는 컴포넌트들을 추가합니다
+            */
+            
+            // 헤더 컨테이너에 컴포넌트 추가
+            headerContainer.add(headerTitle);
+            headerContainer.add(homeButton);
+            headerContainer.add(aboutButton);
+            headerContainer.add(contactButton);
+            
+            // 사이드바 컨테이너에 컴포넌트 추가
+            sidebarContainer.add(sidebarTitle);
+            sidebarContainer.add(menuItem1);
+            sidebarContainer.add(menuItem2);
+            sidebarContainer.add(menuItem3);
+            sidebarContainer.add(menuItem4);
+            
+            // 콘텐츠 컨테이너에 컴포넌트 추가
+            contentContainer.add(contentTitle);
+            contentContainer.add(contentText);
+            contentContainer.add(refreshButton);
+            contentContainer.add(saveButton);
+            contentContainer.add(cancelButton);
+            
+            // 푸터 컨테이너에 컴포넌트 추가
+            footerContainer.add(footerText);
+            
+            /*
+                ===== 10단계: 메인 컨테이너에 모든 하위 컨테이너 추가 =====
+            */
+            mainContainer.add(headerContainer);
+            mainContainer.add(sidebarContainer);
+            mainContainer.add(contentContainer);
+            mainContainer.add(footerContainer);
+            mainContainer.add(statusBar);
+            
+            /*
+                ===== 11단계: 메인 컨테이너를 화면에 추가 =====
+            */
+            this.add(mainContainer);
+            
+            /*
+                ===== 12단계: 초기 설정 =====
+            */
+            // 초기 메뉴 선택 상태 설정
+            menuItem1.set_background("lightblue");
+            changeContent("dashboard");
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 것들:
+                
+                1. 컨테이너 사용법:
+                   - 다른 컴포넌트들을 그룹으로 관리하는 방법
+                   - 계층적 구조 만들기
+                
+                2. 레이아웃 설계:
+                   - 헤더, 사이드바, 메인 콘텐츠, 푸터 구조
+                   - 각 영역의 역할과 배치 방법
+                
+                3. 컴포넌트 그룹핑:
+                   - 관련된 컴포넌트들을 하나의 컨테이너로 묶기
+                   - 코드의 가독성과 유지보수성 향상
+                
+                4. 이벤트 기반 UI:
+                   - 사용자 상호작용에 따른 동적 콘텐츠 변경
+                   - 상태 관리와 피드백 제공
+                
+                5. 반응형 레이아웃:
+                   - 고정 크기와 상대적 위치 사용
+                   - 다양한 화면 크기에 대응 가능한 구조
+                
+                이제 더 복잡하고 전문적인 애플리케이션 레이아웃을 만들 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>
+
+

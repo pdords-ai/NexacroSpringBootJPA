@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 기본 UI - 드롭다운과 콤보박스</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        function on_application_ready() {
+            // 1. 도시 선택을 위한 라벨
+            var cityLabel = new nexacro.Label("cityLabel");
+            cityLabel.set_text("거주 도시를 선택하세요:");
+            cityLabel.set_left(50);
+            cityLabel.set_top(50);
+            cityLabel.set_width(200);
+            cityLabel.set_height(30);
+            
+            // 2. 도시 선택을 위한 콤보박스 (드롭다운)
+            var cityCombo = new nexacro.ComboBox("cityCombo");
+            cityCombo.set_left(270);
+            cityCombo.set_top(50);
+            cityCombo.set_width(150);
+            cityCombo.set_height(30);
+            
+            // 콤보박스에 선택할 수 있는 항목들을 추가합니다
+            cityCombo.addItem("서울", "seoul");
+            cityCombo.addItem("부산", "busan");
+            cityCombo.addItem("대구", "daegu");
+            cityCombo.addItem("인천", "incheon");
+            cityCombo.addItem("광주", "gwangju");
+            cityCombo.addItem("대전", "daejeon");
+            cityCombo.addItem("울산", "ulsan");
+            
+            // 3. 취미 선택을 위한 라벨
+            var hobbyLabel = new nexacro.Label("hobbyLabel");
+            hobbyLabel.set_text("취미를 선택하세요:");
+            hobbyLabel.set_left(50);
+            hobbyLabel.set_top(100);
+            hobbyLabel.set_width(200);
+            hobbyLabel.set_height(30);
+            
+            // 4. 취미 선택을 위한 콤보박스
+            var hobbyCombo = new nexacro.ComboBox("hobbyCombo");
+            hobbyCombo.set_left(270);
+            hobbyCombo.set_top(100);
+            hobbyCombo.set_width(150);
+            hobbyCombo.set_height(30);
+            
+            // 취미 항목들을 추가합니다
+            hobbyCombo.addItem("독서", "reading");
+            hobbyCombo.addItem("영화감상", "movie");
+            hobbyCombo.addItem("운동", "exercise");
+            hobbyCombo.addItem("음악감상", "music");
+            hobbyCombo.addItem("요리", "cooking");
+            hobbyCombo.addItem("여행", "travel");
+            hobbyCombo.addItem("게임", "gaming");
+            
+            // 5. 확인 버튼
+            var confirmButton = new nexacro.Button("confirmButton");
+            confirmButton.set_text("선택 확인");
+            confirmButton.set_left(50);
+            confirmButton.set_top(150);
+            confirmButton.set_width(100);
+            confirmButton.set_height(30);
+            
+            // 6. 결과를 보여줄 라벨
+            var resultLabel = new nexacro.Label("resultLabel");
+            resultLabel.set_text("선택한 내용이 여기에 나타납니다");
+            resultLabel.set_left(50);
+            resultLabel.set_top(200);
+            resultLabel.set_width(400);
+            resultLabel.set_height(60);
+            resultLabel.set_background("lightgreen");
+            
+            // 7. 콤보박스 값이 변경될 때 실행되는 이벤트
+            cityCombo.addEventHandler("onchanged", function() {
+                var selectedCity = cityCombo.get_text(); // 선택된 도시 이름
+                var selectedValue = cityCombo.get_value(); // 선택된 도시 값
+                console.log("선택된 도시: " + selectedCity + " (값: " + selectedValue + ")");
+            });
+            
+            hobbyCombo.addEventHandler("onchanged", function() {
+                var selectedHobby = hobbyCombo.get_text(); // 선택된 취미 이름
+                var selectedValue = hobbyCombo.get_value(); // 선택된 취미 값
+                console.log("선택된 취미: " + selectedHobby + " (값: " + selectedValue + ")");
+            });
+            
+            // 8. 확인 버튼 클릭 이벤트
+            confirmButton.addEventHandler("onclick", function() {
+                // 선택된 값들을 가져옵니다
+                var selectedCity = cityCombo.get_text();
+                var selectedHobby = hobbyCombo.get_text();
+                
+                // 선택이 완료되었는지 확인합니다
+                if (selectedCity == "" || selectedHobby == "") {
+                    alert("도시와 취미를 모두 선택해주세요!");
+                } else {
+                    // 결과를 보여줍니다
+                    var message = "선택하신 정보:\n";
+                    message += "거주 도시: " + selectedCity + "\n";
+                    message += "취미: " + selectedHobby;
+                    resultLabel.set_text(message);
+                }
+            });
+            
+            // 9. 모든 컴포넌트를 화면에 추가합니다
+            this.add(cityLabel);
+            this.add(cityCombo);
+            this.add(hobbyLabel);
+            this.add(hobbyCombo);
+            this.add(confirmButton);
+            this.add(resultLabel);
+        }
+    </script>
+</body>
+</html>

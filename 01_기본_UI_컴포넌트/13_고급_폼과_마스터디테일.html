@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 고급 폼과 마스터-디테일</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 고급 폼과 마스터-디테일 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 마스터-디테일 관계 구현
+            2. 동적 폼 생성
+            3. 폼 검증과 에러 처리
+            4. 다단계 폼 (Wizard)
+            5. 조건부 필드 표시
+            6. 폼 데이터 바인딩
+            7. 폼 상태 관리
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 데이터셋 설정 =====
+            */
+            
+            // 주문 마스터 데이터셋
+            var orderDataset = new nexacro.Dataset("orderDataset");
+            orderDataset.addColumn("orderId", "number");
+            orderDataset.addColumn("customerName", "string");
+            orderDataset.addColumn("orderDate", "string");
+            orderDataset.addColumn("totalAmount", "number");
+            orderDataset.addColumn("status", "string");
+            orderDataset.addColumn("notes", "string");
+            
+            // 주문 상세 데이터셋
+            var orderDetailDataset = new nexacro.Dataset("orderDetailDataset");
+            orderDetailDataset.addColumn("detailId", "number");
+            orderDetailDataset.addColumn("orderId", "number");
+            orderDetailDataset.addColumn("productName", "string");
+            orderDetailDataset.addColumn("quantity", "number");
+            orderDetailDataset.addColumn("unitPrice", "number");
+            orderDetailDataset.addColumn("totalPrice", "number");
+            
+            // 샘플 데이터 생성
+            var sampleOrders = [
+                {orderId: 1, customerName: "김철수", orderDate: "2024-01-15", totalAmount: 150000, status: "완료", notes: "빠른 배송 요청"},
+                {orderId: 2, customerName: "이영희", orderDate: "2024-01-16", totalAmount: 230000, status: "진행중", notes: "특별 포장 요청"},
+                {orderId: 3, customerName: "박민수", orderDate: "2024-01-17", totalAmount: 180000, status: "대기", notes: ""},
+                {orderId: 4, customerName: "정수진", orderDate: "2024-01-18", totalAmount: 320000, status: "완료", notes: "회사 주문"},
+                {orderId: 5, customerName: "최영호", orderDate: "2024-01-19", totalAmount: 95000, status: "진행중", notes: ""}
+            ];
+            
+            var sampleOrderDetails = [
+                {detailId: 1, orderId: 1, productName: "노트북", quantity: 1, unitPrice: 120000, totalPrice: 120000},
+                {detailId: 2, orderId: 1, productName: "마우스", quantity: 2, unitPrice: 15000, totalPrice: 30000},
+                {detailId: 3, orderId: 2, productName: "모니터", quantity: 1, unitPrice: 200000, totalPrice: 200000},
+                {detailId: 4, orderId: 2, productName: "키보드", quantity: 1, unitPrice: 30000, totalPrice: 30000},
+                {detailId: 5, orderId: 3, productName: "스마트폰", quantity: 1, unitPrice: 150000, totalPrice: 150000},
+                {detailId: 6, orderId: 3, productName: "케이스", quantity: 2, unitPrice: 15000, totalPrice: 30000},
+                {detailId: 7, orderId: 4, productName: "TV", quantity: 1, unitPrice: 300000, totalPrice: 300000},
+                {detailId: 8, orderId: 4, productName: "리모컨", quantity: 1, unitPrice: 20000, totalPrice: 20000},
+                {detailId: 9, orderId: 5, productName: "헤드폰", quantity: 1, unitPrice: 95000, totalPrice: 95000}
+            ];
+            
+            // 데이터셋에 샘플 데이터 추가
+            for (var i = 0; i < sampleOrders.length; i++) {
+                var order = sampleOrders[i];
+                var newRow = orderDataset.addRow();
+                orderDataset.setCellData(newRow, "orderId", order.orderId);
+                orderDataset.setCellData(newRow, "customerName", order.customerName);
+                orderDataset.setCellData(newRow, "orderDate", order.orderDate);
+                orderDataset.setCellData(newRow, "totalAmount", order.totalAmount);
+                orderDataset.setCellData(newRow, "status", order.status);
+                orderDataset.setCellData(newRow, "notes", order.notes);
+            }
+            
+            for (var i = 0; i < sampleOrderDetails.length; i++) {
+                var detail = sampleOrderDetails[i];
+                var newRow = orderDetailDataset.addRow();
+                orderDetailDataset.setCellData(newRow, "detailId", detail.detailId);
+                orderDetailDataset.setCellData(newRow, "orderId", detail.orderId);
+                orderDetailDataset.setCellData(newRow, "productName", detail.productName);
+                orderDetailDataset.setCellData(newRow, "quantity", detail.quantity);
+                orderDetailDataset.setCellData(newRow, "unitPrice", detail.unitPrice);
+                orderDetailDataset.setCellData(newRow, "totalPrice", detail.totalPrice);
+            }
+            
+            /*
+                ===== 2단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("고급 폼과 마스터-디테일 - 주문 관리 시스템");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(800);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            titleLabel.set_background("lightblue");
+            
+            // 탭 컨테이너
+            var tabContainer = new nexacro.Container("tabContainer");
+            tabContainer.set_left(50);
+            tabContainer.set_top(70);
+            tabContainer.set_width(1000);
+            tabContainer.set_height(50);
+            tabContainer.set_background("lightgray");
+            tabContainer.set_border("1px solid #ccc");
+            
+            // 탭 버튼들
+            var listTabButton = new nexacro.Button("listTabButton");
+            listTabButton.set_text("주문 목록");
+            listTabButton.set_left(10);
+            listTabButton.set_top(10);
+            listTabButton.set_width(120);
+            listTabButton.set_height(30);
+            listTabButton.set_background("lightblue");
+            
+            var formTabButton = new nexacro.Button("formTabButton");
+            formTabButton.set_text("주문 등록");
+            formTabButton.set_left(140);
+            formTabButton.set_top(10);
+            formTabButton.set_width(120);
+            formTabButton.set_height(30);
+            formTabButton.set_background("lightgray");
+            
+            var wizardTabButton = new nexacro.Button("wizardTabButton");
+            wizardTabButton.set_text("단계별 등록");
+            wizardTabButton.set_left(270);
+            wizardTabButton.set_top(10);
+            wizardTabButton.set_width(120);
+            wizardTabButton.set_height(30);
+            wizardTabButton.set_background("lightgray");
+            
+            // 메인 컨테이너
+            var mainContainer = new nexacro.Container("mainContainer");
+            mainContainer.set_left(50);
+            mainContainer.set_top(130);
+            mainContainer.set_width(1000);
+            mainContainer.set_height(500);
+            mainContainer.set_background("white");
+            mainContainer.set_border("2px solid #ccc");
+            
+            /*
+                ===== 3단계: 주문 목록 화면 =====
+            */
+            var listContainer = new nexacro.Container("listContainer");
+            listContainer.set_left(10);
+            listContainer.set_top(10);
+            listContainer.set_width(980);
+            listContainer.set_height(480);
+            listContainer.set_background("white");
+            
+            // 주문 목록 그리드
+            var orderGrid = new nexacro.Grid("orderGrid");
+            orderGrid.set_left(10);
+            orderGrid.set_top(10);
+            orderGrid.set_width(600);
+            orderGrid.set_height(300);
+            orderGrid.set_border("1px solid #ccc");
+            orderGrid.set_dataset(orderDataset);
+            
+            orderGrid.addColumn("orderId", "주문ID", 80);
+            orderGrid.addColumn("customerName", "고객명", 100);
+            orderGrid.addColumn("orderDate", "주문일", 100);
+            orderGrid.addColumn("totalAmount", "총액", 100);
+            orderGrid.addColumn("status", "상태", 80);
+            orderGrid.addColumn("notes", "비고", 120);
+            
+            // 주문 상세 그리드
+            var detailGrid = new nexacro.Grid("detailGrid");
+            detailGrid.set_left(620);
+            detailGrid.set_top(10);
+            detailGrid.set_width(360);
+            detailGrid.set_height(300);
+            detailGrid.set_border("1px solid #ccc");
+            detailGrid.set_dataset(orderDetailDataset);
+            
+            detailGrid.addColumn("productName", "제품명", 120);
+            detailGrid.addColumn("quantity", "수량", 60);
+            detailGrid.addColumn("unitPrice", "단가", 80);
+            detailGrid.addColumn("totalPrice", "합계", 80);
+            
+            // 주문 상세 정보
+            var detailInfoLabel = new nexacro.Label("detailInfoLabel");
+            detailInfoLabel.set_text("주문 상세 정보");
+            detailInfoLabel.set_left(10);
+            detailInfoLabel.set_top(320);
+            detailInfoLabel.set_width(970);
+            detailInfoLabel.set_height(30);
+            detailInfoLabel.set_font("bold 14px Arial");
+            detailInfoLabel.set_background("lightgray");
+            
+            var detailInfoText = new nexacro.Label("detailInfoText");
+            detailInfoText.set_text("주문을 선택하면 상세 정보가 표시됩니다");
+            detailInfoText.set_left(10);
+            detailInfoText.set_top(360);
+            detailInfoText.set_width(970);
+            detailInfoText.set_height(110);
+            detailInfoText.set_background("lightyellow");
+            detailInfoText.set_border("1px solid #ccc");
+            
+            /*
+                ===== 4단계: 주문 등록 폼 =====
+            */
+            var formContainer = new nexacro.Container("formContainer");
+            formContainer.set_left(10);
+            formContainer.set_top(10);
+            formContainer.set_width(980);
+            formContainer.set_height(480);
+            formContainer.set_background("white");
+            formContainer.set_visible(false);
+            
+            // 폼 제목
+            var formTitle = new nexacro.Label("formTitle");
+            formTitle.set_text("새 주문 등록");
+            formTitle.set_left(10);
+            formTitle.set_top(10);
+            formTitle.set_width(960);
+            formTitle.set_height(30);
+            formTitle.set_font("bold 16px Arial");
+            formTitle.set_background("lightblue");
+            
+            // 고객 정보 섹션
+            var customerSection = new nexacro.Label("customerSection");
+            customerSection.set_text("고객 정보");
+            customerSection.set_left(10);
+            customerSection.set_top(50);
+            customerSection.set_width(960);
+            customerSection.set_height(25);
+            customerSection.set_font("bold 14px Arial");
+            customerSection.set_background("lightgray");
+            
+            var customerNameLabel = new nexacro.Label("customerNameLabel");
+            customerNameLabel.set_text("고객명 *:");
+            customerNameLabel.set_left(20);
+            customerNameLabel.set_top(85);
+            customerNameLabel.set_width(80);
+            customerNameLabel.set_height(25);
+            
+            var customerNameText = new nexacro.TextBox("customerNameText");
+            customerNameText.set_left(110);
+            customerNameText.set_top(85);
+            customerNameText.set_width(150);
+            customerNameText.set_height(25);
+            
+            var orderDateLabel = new nexacro.Label("orderDateLabel");
+            orderDateLabel.set_text("주문일 *:");
+            orderDateLabel.set_left(280);
+            orderDateLabel.set_top(85);
+            orderDateLabel.set_width(80);
+            orderDateLabel.set_height(25);
+            
+            var orderDateText = new nexacro.TextBox("orderDateText");
+            orderDateText.set_left(370);
+            orderDateText.set_top(85);
+            orderDateText.set_width(120);
+            orderDateText.set_height(25);
+            orderDateText.set_text(new Date().toISOString().split('T')[0]);
+            
+            var statusLabel = new nexacro.Label("statusLabel");
+            statusLabel.set_text("상태:");
+            statusLabel.set_left(510);
+            statusLabel.set_top(85);
+            statusLabel.set_width(50);
+            statusLabel.set_height(25);
+            
+            var statusCombo = new nexacro.ComboBox("statusCombo");
+            statusCombo.set_left(570);
+            statusCombo.set_top(85);
+            statusCombo.set_width(100);
+            statusCombo.set_height(25);
+            statusCombo.addItem("대기", "대기");
+            statusCombo.addItem("진행중", "진행중");
+            statusCombo.addItem("완료", "완료");
+            statusCombo.set_text("대기");
+            
+            // 주문 상세 섹션
+            var detailSection = new nexacro.Label("detailSection");
+            detailSection.set_text("주문 상세");
+            detailSection.set_left(10);
+            detailSection.set_top(120);
+            detailSection.set_width(960);
+            detailSection.set_height(25);
+            detailSection.set_font("bold 14px Arial");
+            detailSection.set_background("lightgray");
+            
+            // 상세 그리드 (폼용)
+            var formDetailGrid = new nexacro.Grid("formDetailGrid");
+            formDetailGrid.set_left(20);
+            formDetailGrid.set_top(155);
+            formDetailGrid.set_width(600);
+            formDetailGrid.set_height(200);
+            formDetailGrid.set_border("1px solid #ccc");
+            formDetailGrid.set_editable(true);
+            
+            formDetailGrid.addColumn("productName", "제품명", 200);
+            formDetailGrid.addColumn("quantity", "수량", 80);
+            formDetailGrid.addColumn("unitPrice", "단가", 100);
+            formDetailGrid.addColumn("totalPrice", "합계", 100);
+            
+            // 상세 추가 폼
+            var addDetailLabel = new nexacro.Label("addDetailLabel");
+            addDetailLabel.set_text("상세 추가:");
+            addDetailLabel.set_left(640);
+            addDetailLabel.set_top(155);
+            addDetailLabel.set_width(80);
+            addDetailLabel.set_height(25);
+            
+            var productNameText = new nexacro.TextBox("productNameText");
+            productNameText.set_left(640);
+            productNameText.set_top(185);
+            productNameText.set_width(120);
+            productNameText.set_height(25);
+            productNameText.set_placeholder("제품명");
+            
+            var quantityText = new nexacro.TextBox("quantityText");
+            quantityText.set_left(640);
+            quantityText.set_top(220);
+            quantityText.set_width(60);
+            quantityText.set_height(25);
+            quantityText.set_placeholder("수량");
+            quantityText.set_inputtype("number");
+            
+            var unitPriceText = new nexacro.TextBox("unitPriceText");
+            unitPriceText.set_left(710);
+            unitPriceText.set_top(220);
+            unitPriceText.set_width(80);
+            unitPriceText.set_height(25);
+            unitPriceText.set_placeholder("단가");
+            unitPriceText.set_inputtype("number");
+            
+            var addDetailButton = new nexacro.Button("addDetailButton");
+            addDetailButton.set_text("추가");
+            addDetailButton.set_left(640);
+            addDetailButton.set_top(255);
+            addDetailButton.set_width(80);
+            addDetailButton.set_height(25);
+            addDetailButton.set_background("lightgreen");
+            
+            var removeDetailButton = new nexacro.Button("removeDetailButton");
+            removeDetailButton.set_text("삭제");
+            removeDetailButton.set_left(730);
+            removeDetailButton.set_top(255);
+            removeDetailButton.set_width(80);
+            removeDetailButton.set_height(25);
+            removeDetailButton.set_background("lightcoral");
+            
+            // 비고
+            var notesLabel = new nexacro.Label("notesLabel");
+            notesLabel.set_text("비고:");
+            notesLabel.set_left(20);
+            notesLabel.set_top(365);
+            notesLabel.set_width(50);
+            notesLabel.set_height(25);
+            
+            var notesText = new nexacro.TextBox("notesText");
+            notesText.set_left(80);
+            notesText.set_top(365);
+            notesText.set_width(300);
+            notesText.set_height(25);
+            notesText.set_placeholder("특별 요청사항이나 비고를 입력하세요");
+            
+            // 총액 표시
+            var totalLabel = new nexacro.Label("totalLabel");
+            totalLabel.set_text("총액: 0원");
+            totalLabel.set_left(400);
+            totalLabel.set_top(365);
+            totalLabel.set_width(200);
+            totalLabel.set_height(25);
+            totalLabel.set_font("bold 14px Arial");
+            totalLabel.set_color("darkred");
+            
+            // 폼 버튼들
+            var saveButton = new nexacro.Button("saveButton");
+            saveButton.set_text("저장");
+            saveButton.set_left(640);
+            saveButton.set_top(365);
+            saveButton.set_width(80);
+            saveButton.set_height(30);
+            saveButton.set_background("lightblue");
+            
+            var cancelButton = new nexacro.Button("cancelButton");
+            cancelButton.set_text("취소");
+            cancelButton.set_left(730);
+            cancelButton.set_top(365);
+            cancelButton.set_width(80);
+            cancelButton.set_height(30);
+            cancelButton.set_background("lightgray");
+            
+            /*
+                ===== 5단계: 단계별 등록 (Wizard) =====
+            */
+            var wizardContainer = new nexacro.Container("wizardContainer");
+            wizardContainer.set_left(10);
+            wizardContainer.set_top(10);
+            wizardContainer.set_width(980);
+            wizardContainer.set_height(480);
+            wizardContainer.set_background("white");
+            wizardContainer.set_visible(false);
+            
+            // 단계 표시
+            var stepLabel = new nexacro.Label("stepLabel");
+            stepLabel.set_text("단계 1/3: 고객 정보 입력");
+            stepLabel.set_left(10);
+            stepLabel.set_top(10);
+            stepLabel.set_width(960);
+            stepLabel.set_height(30);
+            stepLabel.set_font("bold 16px Arial");
+            stepLabel.set_background("lightblue");
+            
+            // 단계별 폼 영역
+            var wizardFormArea = new nexacro.Label("wizardFormArea");
+            wizardFormArea.set_text("단계별 폼이 여기에 표시됩니다");
+            wizardFormArea.set_left(10);
+            wizardFormArea.set_top(50);
+            wizardFormArea.set_width(960);
+            wizardFormArea.set_height(350);
+            wizardFormArea.set_background("lightyellow");
+            wizardFormArea.set_border("1px solid #ccc");
+            
+            // 단계 버튼들
+            var prevButton = new nexacro.Button("prevButton");
+            prevButton.set_text("이전");
+            prevButton.set_left(10);
+            prevButton.set_top(410);
+            prevButton.set_width(80);
+            prevButton.set_height(30);
+            prevButton.set_background("lightgray");
+            prevButton.set_enabled(false);
+            
+            var nextButton = new nexacro.Button("nextButton");
+            nextButton.set_text("다음");
+            nextButton.set_left(100);
+            nextButton.set_top(410);
+            nextButton.set_width(80);
+            nextButton.set_height(30);
+            nextButton.set_background("lightgreen");
+            
+            var finishButton = new nexacro.Button("finishButton");
+            finishButton.set_text("완료");
+            finishButton.set_left(190);
+            finishButton.set_top(410);
+            finishButton.set_width(80);
+            finishButton.set_height(30);
+            finishButton.set_background("lightblue");
+            finishButton.set_visible(false);
+            
+            /*
+                ===== 6단계: 상태 관리 변수들 =====
+            */
+            var currentTab = "list";
+            var currentWizardStep = 1;
+            var formDetailData = [];
+            var selectedOrderId = null;
+            
+            /*
+                ===== 7단계: 마스터-디테일 함수들 =====
+            */
+            
+            /*
+                주문 선택 시 상세 정보 업데이트
+            */
+            function updateOrderDetail(orderId) {
+                selectedOrderId = orderId;
+                
+                // 상세 데이터 필터링
+                var filteredDetail = new nexacro.Dataset("filteredDetail");
+                filteredDetail.addColumn("productName", "string");
+                filteredDetail.addColumn("quantity", "number");
+                filteredDetail.addColumn("unitPrice", "number");
+                filteredDetail.addColumn("totalPrice", "number");
+                
+                for (var i = 0; i < orderDetailDataset.getRowCount(); i++) {
+                    if (orderDetailDataset.getCellData(i, "orderId") === orderId) {
+                        var newRow = filteredDetail.addRow();
+                        filteredDetail.setCellData(newRow, "productName", orderDetailDataset.getCellData(i, "productName"));
+                        filteredDetail.setCellData(newRow, "quantity", orderDetailDataset.getCellData(i, "quantity"));
+                        filteredDetail.setCellData(newRow, "unitPrice", orderDetailDataset.getCellData(i, "unitPrice"));
+                        filteredDetail.setCellData(newRow, "totalPrice", orderDetailDataset.getCellData(i, "totalPrice"));
+                    }
+                }
+                
+                detailGrid.set_dataset(filteredDetail);
+                
+                // 주문 정보 표시
+                var orderInfo = "";
+                for (var i = 0; i < orderDataset.getRowCount(); i++) {
+                    if (orderDataset.getCellData(i, "orderId") === orderId) {
+                        orderInfo = "주문 ID: " + orderDataset.getCellData(i, "orderId") + "\n";
+                        orderInfo += "고객명: " + orderDataset.getCellData(i, "customerName") + "\n";
+                        orderInfo += "주문일: " + orderDataset.getCellData(i, "orderDate") + "\n";
+                        orderInfo += "총액: " + orderDataset.getCellData(i, "totalAmount").toLocaleString() + "원\n";
+                        orderInfo += "상태: " + orderDataset.getCellData(i, "status") + "\n";
+                        orderInfo += "비고: " + orderDataset.getCellData(i, "notes");
+                        break;
+                    }
+                }
+                
+                detailInfoText.set_text(orderInfo);
+            }
+            
+            /*
+                탭 전환 함수
+            */
+            function switchTab(tabName) {
+                currentTab = tabName;
+                
+                // 모든 탭 숨기기
+                listContainer.set_visible(false);
+                formContainer.set_visible(false);
+                wizardContainer.set_visible(false);
+                
+                // 탭 버튼 색상 초기화
+                listTabButton.set_background("lightgray");
+                formTabButton.set_background("lightgray");
+                wizardTabButton.set_background("lightgray");
+                
+                // 선택된 탭 표시
+                switch (tabName) {
+                    case "list":
+                        listContainer.set_visible(true);
+                        listTabButton.set_background("lightblue");
+                        break;
+                    case "form":
+                        formContainer.set_visible(true);
+                        formTabButton.set_background("lightblue");
+                        break;
+                    case "wizard":
+                        wizardContainer.set_visible(true);
+                        wizardTabButton.set_background("lightblue");
+                        break;
+                }
+            }
+            
+            /*
+                폼 상세 추가
+            */
+            function addFormDetail() {
+                var productName = productNameText.get_text();
+                var quantity = parseInt(quantityText.get_text());
+                var unitPrice = parseInt(unitPriceText.get_text());
+                
+                if (productName && quantity && unitPrice) {
+                    var totalPrice = quantity * unitPrice;
+                    formDetailData.push({
+                        productName: productName,
+                        quantity: quantity,
+                        unitPrice: unitPrice,
+                        totalPrice: totalPrice
+                    });
+                    
+                    updateFormDetailGrid();
+                    updateFormTotal();
+                    
+                    // 입력 필드 초기화
+                    productNameText.set_text("");
+                    quantityText.set_text("");
+                    unitPriceText.set_text("");
+                } else {
+                    alert("모든 필드를 입력해주세요!");
+                }
+            }
+            
+            /*
+                폼 상세 그리드 업데이트
+            */
+            function updateFormDetailGrid() {
+                var tempDataset = new nexacro.Dataset("tempDataset");
+                tempDataset.addColumn("productName", "string");
+                tempDataset.addColumn("quantity", "number");
+                tempDataset.addColumn("unitPrice", "number");
+                tempDataset.addColumn("totalPrice", "number");
+                
+                for (var i = 0; i < formDetailData.length; i++) {
+                    var newRow = tempDataset.addRow();
+                    tempDataset.setCellData(newRow, "productName", formDetailData[i].productName);
+                    tempDataset.setCellData(newRow, "quantity", formDetailData[i].quantity);
+                    tempDataset.setCellData(newRow, "unitPrice", formDetailData[i].unitPrice);
+                    tempDataset.setCellData(newRow, "totalPrice", formDetailData[i].totalPrice);
+                }
+                
+                formDetailGrid.set_dataset(tempDataset);
+            }
+            
+            /*
+                폼 총액 업데이트
+            */
+            function updateFormTotal() {
+                var total = 0;
+                for (var i = 0; i < formDetailData.length; i++) {
+                    total += formDetailData[i].totalPrice;
+                }
+                totalLabel.set_text("총액: " + total.toLocaleString() + "원");
+            }
+            
+            /*
+                폼 저장
+            */
+            function saveForm() {
+                var customerName = customerNameText.get_text();
+                var orderDate = orderDateText.get_text();
+                var status = statusCombo.get_text();
+                var notes = notesText.get_text();
+                
+                if (!customerName || !orderDate) {
+                    alert("고객명과 주문일을 입력해주세요!");
+                    return;
+                }
+                
+                if (formDetailData.length === 0) {
+                    alert("주문 상세를 추가해주세요!");
+                    return;
+                }
+                
+                // 새 주문 ID 생성
+                var newOrderId = orderDataset.getRowCount() + 1;
+                var totalAmount = 0;
+                for (var i = 0; i < formDetailData.length; i++) {
+                    totalAmount += formDetailData[i].totalPrice;
+                }
+                
+                // 주문 추가
+                var newOrderRow = orderDataset.addRow();
+                orderDataset.setCellData(newOrderRow, "orderId", newOrderId);
+                orderDataset.setCellData(newOrderRow, "customerName", customerName);
+                orderDataset.setCellData(newOrderRow, "orderDate", orderDate);
+                orderDataset.setCellData(newOrderRow, "totalAmount", totalAmount);
+                orderDataset.setCellData(newOrderRow, "status", status);
+                orderDataset.setCellData(newOrderRow, "notes", notes);
+                
+                // 상세 추가
+                for (var i = 0; i < formDetailData.length; i++) {
+                    var newDetailRow = orderDetailDataset.addRow();
+                    orderDetailDataset.setCellData(newDetailRow, "detailId", orderDetailDataset.getRowCount());
+                    orderDetailDataset.setCellData(newDetailRow, "orderId", newOrderId);
+                    orderDetailDataset.setCellData(newDetailRow, "productName", formDetailData[i].productName);
+                    orderDetailDataset.setCellData(newDetailRow, "quantity", formDetailData[i].quantity);
+                    orderDetailDataset.setCellData(newDetailRow, "unitPrice", formDetailData[i].unitPrice);
+                    orderDetailDataset.setCellData(newDetailRow, "totalPrice", formDetailData[i].totalPrice);
+                }
+                
+                alert("주문이 저장되었습니다! (주문 ID: " + newOrderId + ")");
+                clearForm();
+            }
+            
+            /*
+                폼 초기화
+            */
+            function clearForm() {
+                customerNameText.set_text("");
+                orderDateText.set_text(new Date().toISOString().split('T')[0]);
+                statusCombo.set_text("대기");
+                notesText.set_text("");
+                productNameText.set_text("");
+                quantityText.set_text("");
+                unitPriceText.set_text("");
+                formDetailData = [];
+                updateFormDetailGrid();
+                updateFormTotal();
+            }
+            
+            /*
+                ===== 8단계: 이벤트 핸들러 연결 =====
+            */
+            
+            // 탭 버튼 이벤트
+            listTabButton.addEventHandler("onclick", function() {
+                switchTab("list");
+            });
+            
+            formTabButton.addEventHandler("onclick", function() {
+                switchTab("form");
+            });
+            
+            wizardTabButton.addEventHandler("onclick", function() {
+                switchTab("wizard");
+            });
+            
+            // 주문 그리드 이벤트
+            orderGrid.addEventHandler("onrowchanged", function() {
+                var selectedRow = orderGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    var orderId = orderDataset.getCellData(selectedRow, "orderId");
+                    updateOrderDetail(orderId);
+                }
+            });
+            
+            // 폼 버튼 이벤트
+            addDetailButton.addEventHandler("onclick", function() {
+                addFormDetail();
+            });
+            
+            removeDetailButton.addEventHandler("onclick", function() {
+                var selectedRow = formDetailGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    formDetailData.splice(selectedRow, 1);
+                    updateFormDetailGrid();
+                    updateFormTotal();
+                }
+            });
+            
+            saveButton.addEventHandler("onclick", function() {
+                saveForm();
+            });
+            
+            cancelButton.addEventHandler("onclick", function() {
+                if (confirm("입력한 내용을 취소하시겠습니까?")) {
+                    clearForm();
+                }
+            });
+            
+            /*
+                ===== 9단계: 초기 설정 =====
+            */
+            switchTab("list");
+            
+            /*
+                ===== 10단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(tabContainer);
+            this.add(listTabButton);
+            this.add(formTabButton);
+            this.add(wizardTabButton);
+            this.add(mainContainer);
+            this.add(listContainer);
+            this.add(orderGrid);
+            this.add(detailGrid);
+            this.add(detailInfoLabel);
+            this.add(detailInfoText);
+            this.add(formContainer);
+            this.add(formTitle);
+            this.add(customerSection);
+            this.add(customerNameLabel);
+            this.add(customerNameText);
+            this.add(orderDateLabel);
+            this.add(orderDateText);
+            this.add(statusLabel);
+            this.add(statusCombo);
+            this.add(detailSection);
+            this.add(formDetailGrid);
+            this.add(addDetailLabel);
+            this.add(productNameText);
+            this.add(quantityText);
+            this.add(unitPriceText);
+            this.add(addDetailButton);
+            this.add(removeDetailButton);
+            this.add(notesLabel);
+            this.add(notesText);
+            this.add(totalLabel);
+            this.add(saveButton);
+            this.add(cancelButton);
+            this.add(wizardContainer);
+            this.add(stepLabel);
+            this.add(wizardFormArea);
+            this.add(prevButton);
+            this.add(nextButton);
+            this.add(finishButton);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 고급 폼과 마스터-디테일 기능들:
+                
+                1. 마스터-디테일 관계:
+                   - 주문(마스터)과 주문상세(디테일) 관계
+                   - 마스터 선택 시 디테일 자동 업데이트
+                   - 관련 데이터 필터링
+                
+                2. 동적 폼 생성:
+                   - 런타임에 폼 요소 추가/삭제
+                   - 동적 데이터셋 생성
+                   - 실시간 데이터 바인딩
+                
+                3. 고급 폼 기능:
+                   - 다중 입력 필드 관리
+                   - 실시간 총액 계산
+                   - 폼 검증과 에러 처리
+                   - 폼 상태 관리
+                
+                4. 탭 기반 인터페이스:
+                   - 여러 화면 간 전환
+                   - 상태 유지
+                   - 사용자 경험 개선
+                
+                5. 데이터 관리:
+                   - 복잡한 데이터 구조
+                   - 관계형 데이터 처리
+                   - 데이터 무결성 보장
+                
+                6. 사용자 인터페이스:
+                   - 직관적인 폼 레이아웃
+                   - 시각적 피드백
+                   - 에러 메시지 표시
+                
+                실제 프로젝트에서는:
+                - 더 복잡한 비즈니스 로직
+                - 서버와의 데이터 동기화
+                - 고급 검증 규칙
+                - 다국어 지원
+                - 접근성 고려
+                
+                이제 엔터프라이즈급 폼 애플리케이션을 만들 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>

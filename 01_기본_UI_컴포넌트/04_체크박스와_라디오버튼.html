@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 기본 UI - 체크박스와 라디오버튼</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        function on_application_ready() {
+            // 1. 성별 선택을 위한 라벨
+            var genderLabel = new nexacro.Label("genderLabel");
+            genderLabel.set_text("성별을 선택하세요:");
+            genderLabel.set_left(50);
+            genderLabel.set_top(50);
+            genderLabel.set_width(200);
+            genderLabel.set_height(30);
+            
+            // 2. 남성 라디오버튼
+            var maleRadio = new nexacro.RadioButton("maleRadio");
+            maleRadio.set_text("남성");
+            maleRadio.set_left(270);
+            maleRadio.set_top(50);
+            maleRadio.set_width(80);
+            maleRadio.set_height(30);
+            maleRadio.set_value("male");
+            
+            // 3. 여성 라디오버튼
+            var femaleRadio = new nexacro.RadioButton("femaleRadio");
+            femaleRadio.set_text("여성");
+            femaleRadio.set_left(360);
+            femaleRadio.set_top(50);
+            femaleRadio.set_width(80);
+            femaleRadio.set_height(30);
+            femaleRadio.set_value("female");
+            
+            // 라디오버튼들을 같은 그룹으로 묶어서 하나만 선택되도록 합니다
+            maleRadio.set_group("genderGroup");
+            femaleRadio.set_group("genderGroup");
+            
+            // 4. 관심사 선택을 위한 라벨
+            var interestLabel = new nexacro.Label("interestLabel");
+            interestLabel.set_text("관심있는 분야를 선택하세요 (복수 선택 가능):");
+            interestLabel.set_left(50);
+            interestLabel.set_top(100);
+            interestLabel.set_width(300);
+            interestLabel.set_height(30);
+            
+            // 5. 관심사 체크박스들
+            var techCheck = new nexacro.CheckBox("techCheck");
+            techCheck.set_text("기술/IT");
+            techCheck.set_left(50);
+            techCheck.set_top(140);
+            techCheck.set_width(100);
+            techCheck.set_height(30);
+            techCheck.set_value("technology");
+            
+            var sportsCheck = new nexacro.CheckBox("sportsCheck");
+            sportsCheck.set_text("스포츠");
+            sportsCheck.set_left(160);
+            sportsCheck.set_top(140);
+            sportsCheck.set_width(100);
+            sportsCheck.set_height(30);
+            sportsCheck.set_value("sports");
+            
+            var musicCheck = new nexacro.CheckBox("musicCheck");
+            musicCheck.set_text("음악");
+            musicCheck.set_left(270);
+            musicCheck.set_top(140);
+            musicCheck.set_width(100);
+            musicCheck.set_height(30);
+            musicCheck.set_value("music");
+            
+            var artCheck = new nexacro.CheckBox("artCheck");
+            artCheck.set_text("예술");
+            artCheck.set_left(380);
+            artCheck.set_top(140);
+            artCheck.set_width(100);
+            artCheck.set_height(30);
+            artCheck.set_value("art");
+            
+            var travelCheck = new nexacro.CheckBox("travelCheck");
+            travelCheck.set_text("여행");
+            travelCheck.set_left(50);
+            travelCheck.set_top(180);
+            travelCheck.set_width(100);
+            travelCheck.set_height(30);
+            travelCheck.set_value("travel");
+            
+            var cookingCheck = new nexacro.CheckBox("cookingCheck");
+            cookingCheck.set_text("요리");
+            cookingCheck.set_left(160);
+            cookingCheck.set_top(180);
+            cookingCheck.set_width(100);
+            cookingCheck.set_height(30);
+            cookingCheck.set_value("cooking");
+            
+            // 6. 확인 버튼
+            var confirmButton = new nexacro.Button("confirmButton");
+            confirmButton.set_text("선택 확인");
+            confirmButton.set_left(50);
+            confirmButton.set_top(230);
+            confirmButton.set_width(100);
+            confirmButton.set_height(30);
+            
+            // 7. 결과를 보여줄 라벨
+            var resultLabel = new nexacro.Label("resultLabel");
+            resultLabel.set_text("선택한 내용이 여기에 나타납니다");
+            resultLabel.set_left(50);
+            resultLabel.set_top(280);
+            resultLabel.set_width(400);
+            resultLabel.set_height(80);
+            resultLabel.set_background("lightyellow");
+            
+            // 8. 라디오버튼 변경 이벤트
+            maleRadio.addEventHandler("onchanged", function() {
+                if (maleRadio.get_checked()) {
+                    console.log("남성이 선택되었습니다");
+                }
+            });
+            
+            femaleRadio.addEventHandler("onchanged", function() {
+                if (femaleRadio.get_checked()) {
+                    console.log("여성이 선택되었습니다");
+                }
+            });
+            
+            // 9. 체크박스 변경 이벤트들
+            techCheck.addEventHandler("onchanged", function() {
+                console.log("기술/IT 체크박스 상태: " + techCheck.get_checked());
+            });
+            
+            sportsCheck.addEventHandler("onchanged", function() {
+                console.log("스포츠 체크박스 상태: " + sportsCheck.get_checked());
+            });
+            
+            musicCheck.addEventHandler("onchanged", function() {
+                console.log("음악 체크박스 상태: " + musicCheck.get_checked());
+            });
+            
+            artCheck.addEventHandler("onchanged", function() {
+                console.log("예술 체크박스 상태: " + artCheck.get_checked());
+            });
+            
+            travelCheck.addEventHandler("onchanged", function() {
+                console.log("여행 체크박스 상태: " + travelCheck.get_checked());
+            });
+            
+            cookingCheck.addEventHandler("onchanged", function() {
+                console.log("요리 체크박스 상태: " + cookingCheck.get_checked());
+            });
+            
+            // 10. 확인 버튼 클릭 이벤트
+            confirmButton.addEventHandler("onclick", function() {
+                var result = "선택하신 정보:\n";
+                
+                // 성별 확인
+                var gender = "";
+                if (maleRadio.get_checked()) {
+                    gender = "남성";
+                } else if (femaleRadio.get_checked()) {
+                    gender = "여성";
+                } else {
+                    gender = "선택하지 않음";
+                }
+                result += "성별: " + gender + "\n";
+                
+                // 관심사 확인
+                var interests = [];
+                if (techCheck.get_checked()) interests.push("기술/IT");
+                if (sportsCheck.get_checked()) interests.push("스포츠");
+                if (musicCheck.get_checked()) interests.push("음악");
+                if (artCheck.get_checked()) interests.push("예술");
+                if (travelCheck.get_checked()) interests.push("여행");
+                if (cookingCheck.get_checked()) interests.push("요리");
+                
+                if (interests.length > 0) {
+                    result += "관심사: " + interests.join(", ");
+                } else {
+                    result += "관심사: 선택하지 않음";
+                }
+                
+                resultLabel.set_text(result);
+            });
+            
+            // 11. 모든 컴포넌트를 화면에 추가합니다
+            this.add(genderLabel);
+            this.add(maleRadio);
+            this.add(femaleRadio);
+            this.add(interestLabel);
+            this.add(techCheck);
+            this.add(sportsCheck);
+            this.add(musicCheck);
+            this.add(artCheck);
+            this.add(travelCheck);
+            this.add(cookingCheck);
+            this.add(confirmButton);
+            this.add(resultLabel);
+        }
+    </script>
+</body>
+</html>

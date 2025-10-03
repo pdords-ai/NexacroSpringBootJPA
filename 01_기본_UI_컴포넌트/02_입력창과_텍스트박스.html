@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 기본 UI - 입력창과 텍스트박스</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        function on_application_ready() {
+            // 1. 라벨을 만듭니다 (사용자에게 무엇을 입력해야 하는지 알려주는 역할)
+            var label1 = new nexacro.Label("label1");
+            label1.set_text("이름을 입력하세요:"); // 사용자에게 이름 입력을 요청
+            label1.set_left(50);
+            label1.set_top(50);
+            label1.set_width(150);
+            label1.set_height(30);
+            
+            // 2. 텍스트박스를 만듭니다 (사용자가 글자를 입력할 수 있는 상자)
+            var textbox1 = new nexacro.TextBox("textbox1");
+            textbox1.set_left(220);  // 라벨 옆에 위치하도록 설정
+            textbox1.set_top(50);
+            textbox1.set_width(150);
+            textbox1.set_height(30);
+            textbox1.set_placeholder("여기에 이름을 입력하세요"); // 입력창 안에 안내 글자 표시
+            
+            // 3. 또 다른 라벨을 만듭니다
+            var label2 = new nexacro.Label("label2");
+            label2.set_text("나이를 입력하세요:"); // 사용자에게 나이 입력을 요청
+            label2.set_left(50);
+            label2.set_top(100);
+            label2.set_width(150);
+            label2.set_height(30);
+            
+            // 4. 숫자만 입력할 수 있는 텍스트박스를 만듭니다
+            var textbox2 = new nexacro.TextBox("textbox2");
+            textbox2.set_left(220);
+            textbox2.set_top(100);
+            textbox2.set_width(150);
+            textbox2.set_height(30);
+            textbox2.set_placeholder("숫자만 입력하세요");
+            textbox2.set_inputtype("number"); // 숫자만 입력할 수 있도록 설정
+            
+            // 5. 확인 버튼을 만듭니다
+            var button1 = new nexacro.Button("button1");
+            button1.set_text("확인");
+            button1.set_left(50);
+            button1.set_top(150);
+            button1.set_width(100);
+            button1.set_height(30);
+            
+            // 6. 결과를 보여줄 라벨을 만듭니다
+            var resultLabel = new nexacro.Label("resultLabel");
+            resultLabel.set_text("입력한 내용이 여기에 나타납니다");
+            resultLabel.set_left(50);
+            resultLabel.set_top(200);
+            resultLabel.set_width(300);
+            resultLabel.set_height(50);
+            resultLabel.set_background("lightblue"); // 배경색을 연한 파란색으로 설정
+            
+            // 7. 확인 버튼을 클릭했을 때 실행될 함수
+            button1.addEventHandler("onclick", function() {
+                // 텍스트박스에서 입력한 내용을 가져옵니다
+                var name = textbox1.get_text(); // 이름 텍스트박스의 내용을 가져옴
+                var age = textbox2.get_text();  // 나이 텍스트박스의 내용을 가져옴
+                
+                // 입력한 내용을 확인합니다
+                if (name == "" || age == "") {
+                    // 이름이나 나이가 비어있으면 경고 메시지를 보여줍니다
+                    alert("이름과 나이를 모두 입력해주세요!");
+                } else {
+                    // 입력한 내용을 결과 라벨에 보여줍니다
+                    var message = "안녕하세요! " + name + "님, " + age + "세이시군요!";
+                    resultLabel.set_text(message);
+                }
+            });
+            
+            // 8. 모든 컴포넌트를 화면에 추가합니다
+            this.add(label1);
+            this.add(textbox1);
+            this.add(label2);
+            this.add(textbox2);
+            this.add(button1);
+            this.add(resultLabel);
+        }
+    </script>
+</body>
+</html>

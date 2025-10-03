@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 기본 UI - 리스트박스</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        function on_application_ready() {
+            // 1. 단일 선택 리스트박스를 위한 라벨
+            var singleLabel = new nexacro.Label("singleLabel");
+            singleLabel.set_text("좋아하는 색상을 선택하세요 (단일 선택):");
+            singleLabel.set_left(50);
+            singleLabel.set_top(50);
+            singleLabel.set_width(300);
+            singleLabel.set_height(30);
+            
+            // 2. 단일 선택 리스트박스
+            var singleList = new nexacro.ListBox("singleList");
+            singleList.set_left(50);
+            singleList.set_top(90);
+            singleList.set_width(200);
+            singleList.set_height(150);
+            
+            // 리스트박스에 항목들을 추가합니다
+            singleList.addItem("빨간색", "red");
+            singleList.addItem("파란색", "blue");
+            singleList.addItem("초록색", "green");
+            singleList.addItem("노란색", "yellow");
+            singleList.addItem("보라색", "purple");
+            singleList.addItem("주황색", "orange");
+            singleList.addItem("검은색", "black");
+            singleList.addItem("흰색", "white");
+            
+            // 3. 복수 선택 리스트박스를 위한 라벨
+            var multiLabel = new nexacro.Label("multiLabel");
+            multiLabel.set_text("좋아하는 과일을 선택하세요 (복수 선택 가능):");
+            multiLabel.set_left(300);
+            multiLabel.set_top(50);
+            multiLabel.set_width(300);
+            multiLabel.set_height(30);
+            
+            // 4. 복수 선택 리스트박스
+            var multiList = new nexacro.ListBox("multiList");
+            multiList.set_left(300);
+            multiList.set_top(90);
+            multiList.set_width(200);
+            multiList.set_height(150);
+            multiList.set_multiselect(true); // 복수 선택이 가능하도록 설정
+            
+            // 과일 항목들을 추가합니다
+            multiList.addItem("사과", "apple");
+            multiList.addItem("바나나", "banana");
+            multiList.addItem("오렌지", "orange");
+            multiList.addItem("포도", "grape");
+            multiList.addItem("딸기", "strawberry");
+            multiList.addItem("키위", "kiwi");
+            multiList.addItem("망고", "mango");
+            multiList.addItem("파인애플", "pineapple");
+            
+            // 5. 버튼들
+            var addButton = new nexacro.Button("addButton");
+            addButton.set_text("항목 추가");
+            addButton.set_left(50);
+            addButton.set_top(260);
+            addButton.set_width(100);
+            addButton.set_height(30);
+            
+            var removeButton = new nexacro.Button("removeButton");
+            removeButton.set_text("선택 항목 삭제");
+            removeButton.set_left(160);
+            removeButton.set_top(260);
+            removeButton.set_width(120);
+            removeButton.set_height(30);
+            
+            var clearButton = new nexacro.Button("clearButton");
+            clearButton.set_text("전체 삭제");
+            clearButton.set_left(290);
+            clearButton.set_top(260);
+            clearButton.set_width(100);
+            clearButton.set_height(30);
+            
+            var confirmButton = new nexacro.Button("confirmButton");
+            confirmButton.set_text("선택 확인");
+            confirmButton.set_left(400);
+            confirmButton.set_top(260);
+            confirmButton.set_width(100);
+            confirmButton.set_height(30);
+            
+            // 6. 결과를 보여줄 라벨
+            var resultLabel = new nexacro.Label("resultLabel");
+            resultLabel.set_text("선택한 내용이 여기에 나타납니다");
+            resultLabel.set_left(50);
+            resultLabel.set_top(310);
+            resultLabel.set_width(500);
+            resultLabel.set_height(80);
+            resultLabel.set_background("lightcyan");
+            
+            // 7. 리스트박스 선택 변경 이벤트
+            singleList.addEventHandler("onchanged", function() {
+                var selectedIndex = singleList.get_selectedindex();
+                var selectedText = singleList.get_text();
+                var selectedValue = singleList.get_value();
+                console.log("단일 선택 - 인덱스: " + selectedIndex + ", 텍스트: " + selectedText + ", 값: " + selectedValue);
+            });
+            
+            multiList.addEventHandler("onchanged", function() {
+                var selectedIndices = multiList.get_selectedindices();
+                var selectedTexts = multiList.get_texts();
+                var selectedValues = multiList.get_values();
+                console.log("복수 선택 - 인덱스들: " + selectedIndices + ", 텍스트들: " + selectedTexts + ", 값들: " + selectedValues);
+            });
+            
+            // 8. 항목 추가 버튼 이벤트
+            addButton.addEventHandler("onclick", function() {
+                var newItem = prompt("추가할 항목의 이름을 입력하세요:");
+                if (newItem && newItem.trim() != "") {
+                    var newValue = newItem.toLowerCase().replace(/\s+/g, "_");
+                    singleList.addItem(newItem, newValue);
+                    multiList.addItem(newItem, newValue);
+                    alert("'" + newItem + "' 항목이 추가되었습니다!");
+                }
+            });
+            
+            // 9. 선택 항목 삭제 버튼 이벤트
+            removeButton.addEventHandler("onclick", function() {
+                // 단일 선택 리스트박스에서 선택된 항목 삭제
+                var singleIndex = singleList.get_selectedindex();
+                if (singleIndex >= 0) {
+                    singleList.removeItem(singleIndex);
+                }
+                
+                // 복수 선택 리스트박스에서 선택된 항목들 삭제 (역순으로 삭제해야 인덱스가 꼬이지 않음)
+                var multiIndices = multiList.get_selectedindices();
+                if (multiIndices && multiIndices.length > 0) {
+                    // 인덱스를 내림차순으로 정렬하여 뒤에서부터 삭제
+                    multiIndices.sort(function(a, b) { return b - a; });
+                    for (var i = 0; i < multiIndices.length; i++) {
+                        multiList.removeItem(multiIndices[i]);
+                    }
+                }
+            });
+            
+            // 10. 전체 삭제 버튼 이벤트
+            clearButton.addEventHandler("onclick", function() {
+                if (confirm("모든 항목을 삭제하시겠습니까?")) {
+                    singleList.clear();
+                    multiList.clear();
+                    alert("모든 항목이 삭제되었습니다!");
+                }
+            });
+            
+            // 11. 선택 확인 버튼 이벤트
+            confirmButton.addEventHandler("onclick", function() {
+                var result = "선택 결과:\n\n";
+                
+                // 단일 선택 결과
+                var singleIndex = singleList.get_selectedindex();
+                var singleText = singleList.get_text();
+                if (singleIndex >= 0) {
+                    result += "좋아하는 색상: " + singleText + "\n";
+                } else {
+                    result += "좋아하는 색상: 선택하지 않음\n";
+                }
+                
+                // 복수 선택 결과
+                var multiTexts = multiList.get_texts();
+                if (multiTexts && multiTexts.length > 0) {
+                    result += "좋아하는 과일: " + multiTexts.join(", ");
+                } else {
+                    result += "좋아하는 과일: 선택하지 않음";
+                }
+                
+                resultLabel.set_text(result);
+            });
+            
+            // 12. 모든 컴포넌트를 화면에 추가합니다
+            this.add(singleLabel);
+            this.add(singleList);
+            this.add(multiLabel);
+            this.add(multiList);
+            this.add(addButton);
+            this.add(removeButton);
+            this.add(clearButton);
+            this.add(confirmButton);
+            this.add(resultLabel);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 데이터처리와 API 연동</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 데이터처리와 API 연동 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 데이터셋을 이용한 데이터 관리
+            2. 서버와의 통신 (HTTP 요청/응답)
+            3. JSON 데이터 처리
+            4. 비동기 처리와 콜백 함수
+            5. 에러 처리와 사용자 피드백
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 데이터셋 설정 =====
+                데이터셋은 서버에서 받아온 데이터를 저장하는 테이블과 같습니다
+            */
+            var userDataset = new nexacro.Dataset("userDataset");
+            
+            // 사용자 정보를 저장할 컬럼들을 정의합니다
+            userDataset.addColumn("id", "number");        // 사용자 ID (숫자)
+            userDataset.addColumn("name", "string");      // 이름 (문자열)
+            userDataset.addColumn("email", "string");     // 이메일 (문자열)
+            userDataset.addColumn("phone", "string");     // 전화번호 (문자열)
+            userDataset.addColumn("department", "string"); // 부서 (문자열)
+            userDataset.addColumn("position", "string");   // 직급 (문자열)
+            userDataset.addColumn("salary", "number");     // 급여 (숫자)
+            userDataset.addColumn("hireDate", "string");   // 입사일 (문자열)
+            
+            /*
+                ===== 2단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("사용자 관리 시스템 - 데이터 처리 및 API 연동");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(600);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            titleLabel.set_background("lightblue");
+            
+            // 데이터 로딩 상태 표시
+            var statusLabel = new nexacro.Label("statusLabel");
+            statusLabel.set_text("준비됨");
+            statusLabel.set_left(50);
+            statusLabel.set_top(70);
+            statusLabel.set_width(600);
+            statusLabel.set_height(25);
+            statusLabel.set_background("lightgreen");
+            statusLabel.set_border("1px solid #ccc");
+            
+            // 그리드 (데이터 표시)
+            var userGrid = new nexacro.Grid("userGrid");
+            userGrid.set_left(50);
+            userGrid.set_top(110);
+            userGrid.set_width(700);
+            userGrid.set_height(300);
+            userGrid.set_border("2px solid #ccc");
+            userGrid.set_dataset(userDataset);
+            
+            // 그리드 컬럼 설정
+            userGrid.addColumn("id", "ID", 60);
+            userGrid.addColumn("name", "이름", 100);
+            userGrid.addColumn("email", "이메일", 150);
+            userGrid.addColumn("phone", "전화번호", 120);
+            userGrid.addColumn("department", "부서", 100);
+            userGrid.addColumn("position", "직급", 80);
+            userGrid.addColumn("salary", "급여", 80);
+            userGrid.addColumn("hireDate", "입사일", 100);
+            
+            // 버튼들
+            var loadDataButton = new nexacro.Button("loadDataButton");
+            loadDataButton.set_text("데이터 로드");
+            loadDataButton.set_left(50);
+            loadDataButton.set_top(430);
+            loadDataButton.set_width(100);
+            loadDataButton.set_height(35);
+            loadDataButton.set_background("lightblue");
+            
+            var saveDataButton = new nexacro.Button("saveDataButton");
+            saveDataButton.set_text("데이터 저장");
+            saveDataButton.set_left(160);
+            saveDataButton.set_top(430);
+            saveDataButton.set_width(100);
+            saveDataButton.set_height(35);
+            saveDataButton.set_background("lightgreen");
+            
+            var addUserButton = new nexacro.Button("addUserButton");
+            addUserButton.set_text("사용자 추가");
+            addUserButton.set_left(270);
+            addUserButton.set_top(430);
+            addUserButton.set_width(100);
+            addUserButton.set_height(35);
+            addUserButton.set_background("lightyellow");
+            
+            var deleteUserButton = new nexacro.Button("deleteUserButton");
+            deleteUserButton.set_text("사용자 삭제");
+            deleteUserButton.set_left(380);
+            deleteUserButton.set_top(430);
+            deleteUserButton.set_width(100);
+            deleteUserButton.set_height(35);
+            deleteUserButton.set_background("lightcoral");
+            
+            var refreshButton = new nexacro.Button("refreshButton");
+            refreshButton.set_text("새로고침");
+            refreshButton.set_left(490);
+            refreshButton.set_top(430);
+            refreshButton.set_width(100);
+            refreshButton.set_height(35);
+            refreshButton.set_background("lightgray");
+            
+            // 통계 정보 표시
+            var statsLabel = new nexacro.Label("statsLabel");
+            statsLabel.set_text("통계 정보가 여기에 표시됩니다");
+            statsLabel.set_left(50);
+            statsLabel.set_top(480);
+            statsLabel.set_width(700);
+            statsLabel.set_height(60);
+            statsLabel.set_background("lightyellow");
+            statsLabel.set_border("1px solid #ccc");
+            
+            /*
+                ===== 3단계: 데이터 처리 함수들 =====
+            */
+            
+            /*
+                상태 메시지를 업데이트하는 함수
+            */
+            function updateStatus(message, isError) {
+                statusLabel.set_text(message);
+                if (isError) {
+                    statusLabel.set_background("lightcoral");
+                    statusLabel.set_color("darkred");
+                } else {
+                    statusLabel.set_background("lightgreen");
+                    statusLabel.set_color("black");
+                }
+            }
+            
+            /*
+                통계 정보를 계산하고 표시하는 함수
+            */
+            function updateStatistics() {
+                var rowCount = userDataset.getRowCount();
+                var totalSalary = 0;
+                var avgSalary = 0;
+                var departments = {};
+                var positions = {};
+                
+                // 모든 행을 돌면서 통계 계산
+                for (var i = 0; i < rowCount; i++) {
+                    var salary = userDataset.getCellData(i, "salary");
+                    var department = userDataset.getCellData(i, "department");
+                    var position = userDataset.getCellData(i, "position");
+                    
+                    totalSalary += salary;
+                    
+                    // 부서별 카운트
+                    if (departments[department]) {
+                        departments[department]++;
+                    } else {
+                        departments[department] = 1;
+                    }
+                    
+                    // 직급별 카운트
+                    if (positions[position]) {
+                        positions[position]++;
+                    } else {
+                        positions[position] = 1;
+                    }
+                }
+                
+                avgSalary = rowCount > 0 ? (totalSalary / rowCount).toFixed(0) : 0;
+                
+                var statsText = "총 사용자 수: " + rowCount + "명 | ";
+                statsText += "평균 급여: " + avgSalary + "원 | ";
+                statsText += "총 급여: " + totalSalary.toLocaleString() + "원";
+                
+                statsLabel.set_text(statsText);
+            }
+            
+            /*
+                샘플 데이터를 생성하는 함수 (실제로는 서버에서 받아옴)
+            */
+            function generateSampleData() {
+                var sampleUsers = [
+                    {id: 1, name: "김철수", email: "kim@company.com", phone: "010-1234-5678", 
+                     department: "개발팀", position: "대리", salary: 4500000, hireDate: "2020-03-15"},
+                    {id: 2, name: "이영희", email: "lee@company.com", phone: "010-2345-6789", 
+                     department: "마케팅팀", position: "과장", salary: 5500000, hireDate: "2019-07-20"},
+                    {id: 3, name: "박민수", email: "park@company.com", phone: "010-3456-7890", 
+                     department: "개발팀", position: "부장", salary: 7500000, hireDate: "2018-01-10"},
+                    {id: 4, name: "정수진", email: "jung@company.com", phone: "010-4567-8901", 
+                     department: "인사팀", position: "대리", salary: 4200000, hireDate: "2021-05-30"},
+                    {id: 5, name: "최영호", email: "choi@company.com", phone: "010-5678-9012", 
+                     department: "영업팀", position: "차장", salary: 6500000, hireDate: "2017-09-15"}
+                ];
+                
+                // 데이터셋 초기화
+                userDataset.clear();
+                
+                // 샘플 데이터 추가
+                for (var i = 0; i < sampleUsers.length; i++) {
+                    var user = sampleUsers[i];
+                    var newRow = userDataset.addRow();
+                    userDataset.setCellData(newRow, "id", user.id);
+                    userDataset.setCellData(newRow, "name", user.name);
+                    userDataset.setCellData(newRow, "email", user.email);
+                    userDataset.setCellData(newRow, "phone", user.phone);
+                    userDataset.setCellData(newRow, "department", user.department);
+                    userDataset.setCellData(newRow, "position", user.position);
+                    userDataset.setCellData(newRow, "salary", user.salary);
+                    userDataset.setCellData(newRow, "hireDate", user.hireDate);
+                }
+            }
+            
+            /*
+                서버에서 데이터를 로드하는 함수 (시뮬레이션)
+            */
+            function loadDataFromServer() {
+                updateStatus("서버에서 데이터를 로드하는 중...", false);
+                
+                // 실제로는 HTTP 요청을 보내지만, 여기서는 시뮬레이션
+                setTimeout(function() {
+                    try {
+                        // 서버 응답 시뮬레이션
+                        generateSampleData();
+                        updateStatistics();
+                        updateStatus("데이터 로드 완료 (" + userDataset.getRowCount() + "개 레코드)", false);
+                    } catch (error) {
+                        updateStatus("데이터 로드 실패: " + error.message, true);
+                    }
+                }, 1500);
+            }
+            
+            /*
+                서버에 데이터를 저장하는 함수 (시뮬레이션)
+            */
+            function saveDataToServer() {
+                updateStatus("서버에 데이터를 저장하는 중...", false);
+                
+                // 실제로는 HTTP 요청을 보내지만, 여기서는 시뮬레이션
+                setTimeout(function() {
+                    try {
+                        // 서버 저장 시뮬레이션
+                        var rowCount = userDataset.getRowCount();
+                        updateStatus("데이터 저장 완료 (" + rowCount + "개 레코드 저장됨)", false);
+                    } catch (error) {
+                        updateStatus("데이터 저장 실패: " + error.message, true);
+                    }
+                }, 2000);
+            }
+            
+            /*
+                새 사용자를 추가하는 함수
+            */
+            function addNewUser() {
+                var newId = userDataset.getRowCount() + 1;
+                var newName = prompt("새 사용자의 이름을 입력하세요:");
+                
+                if (newName && newName.trim() != "") {
+                    var newEmail = prompt("이메일을 입력하세요:");
+                    var newPhone = prompt("전화번호를 입력하세요:");
+                    var newDepartment = prompt("부서를 입력하세요:");
+                    var newPosition = prompt("직급을 입력하세요:");
+                    var newSalary = prompt("급여를 입력하세요:");
+                    var newHireDate = prompt("입사일을 입력하세요 (YYYY-MM-DD):");
+                    
+                    if (newEmail && newPhone && newDepartment && newPosition && newSalary && newHireDate) {
+                        var newRow = userDataset.addRow();
+                        userDataset.setCellData(newRow, "id", newId);
+                        userDataset.setCellData(newRow, "name", newName);
+                        userDataset.setCellData(newRow, "email", newEmail);
+                        userDataset.setCellData(newRow, "phone", newPhone);
+                        userDataset.setCellData(newRow, "department", newDepartment);
+                        userDataset.setCellData(newRow, "position", newPosition);
+                        userDataset.setCellData(newRow, "salary", parseInt(newSalary));
+                        userDataset.setCellData(newRow, "hireDate", newHireDate);
+                        
+                        updateStatistics();
+                        updateStatus("새 사용자가 추가되었습니다: " + newName, false);
+                    } else {
+                        updateStatus("모든 필드를 입력해주세요", true);
+                    }
+                }
+            }
+            
+            /*
+                선택된 사용자를 삭제하는 함수
+            */
+            function deleteSelectedUser() {
+                var selectedRow = userGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    var userName = userDataset.getCellData(selectedRow, "name");
+                    if (confirm(userName + "님의 정보를 삭제하시겠습니까?")) {
+                        userDataset.removeRow(selectedRow);
+                        updateStatistics();
+                        updateStatus("사용자 정보가 삭제되었습니다: " + userName, false);
+                    }
+                } else {
+                    updateStatus("삭제할 사용자를 먼저 선택해주세요", true);
+                }
+            }
+            
+            /*
+                ===== 4단계: 이벤트 핸들러 연결 =====
+            */
+            
+            // 데이터 로드 버튼
+            loadDataButton.addEventHandler("onclick", function() {
+                loadDataFromServer();
+            });
+            
+            // 데이터 저장 버튼
+            saveDataButton.addEventHandler("onclick", function() {
+                if (userDataset.getRowCount() > 0) {
+                    saveDataToServer();
+                } else {
+                    updateStatus("저장할 데이터가 없습니다", true);
+                }
+            });
+            
+            // 사용자 추가 버튼
+            addUserButton.addEventHandler("onclick", function() {
+                addNewUser();
+            });
+            
+            // 사용자 삭제 버튼
+            deleteUserButton.addEventHandler("onclick", function() {
+                deleteSelectedUser();
+            });
+            
+            // 새로고침 버튼
+            refreshButton.addEventHandler("onclick", function() {
+                updateStatistics();
+                updateStatus("데이터가 새로고침되었습니다", false);
+            });
+            
+            // 그리드 행 선택 이벤트
+            userGrid.addEventHandler("onrowchanged", function() {
+                var selectedRow = userGrid.get_selectedrow();
+                if (selectedRow >= 0) {
+                    var userName = userDataset.getCellData(selectedRow, "name");
+                    updateStatus("선택된 사용자: " + userName, false);
+                }
+            });
+            
+            // 데이터셋 변경 이벤트
+            userDataset.addEventHandler("onrowadded", function() {
+                updateStatistics();
+            });
+            
+            userDataset.addEventHandler("onrowremoved", function() {
+                updateStatistics();
+            });
+            
+            /*
+                ===== 5단계: 초기 데이터 로드 =====
+            */
+            loadDataFromServer();
+            
+            /*
+                ===== 6단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(statusLabel);
+            this.add(userGrid);
+            this.add(loadDataButton);
+            this.add(saveDataButton);
+            this.add(addUserButton);
+            this.add(deleteUserButton);
+            this.add(refreshButton);
+            this.add(statsLabel);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 것들:
+                
+                1. 데이터셋 관리:
+                   - 컬럼 정의와 데이터 타입 설정
+                   - 행 추가/삭제/수정
+                   - 데이터 검색과 필터링
+                
+                2. 서버 통신 시뮬레이션:
+                   - 비동기 처리 (setTimeout 사용)
+                   - 로딩 상태 표시
+                   - 에러 처리와 사용자 피드백
+                
+                3. 데이터 처리:
+                   - 통계 계산 (평균, 합계, 카운트)
+                   - 데이터 검증과 유효성 검사
+                   - 사용자 입력 처리
+                
+                4. 이벤트 기반 프로그래밍:
+                   - 사용자 상호작용 처리
+                   - 데이터 변경 시 자동 업데이트
+                   - 상태 관리와 피드백
+                
+                5. 실제 API 연동을 위한 기초:
+                   - HTTP 요청/응답 구조 이해
+                   - JSON 데이터 처리 준비
+                   - 에러 핸들링 패턴
+                
+                실제 프로젝트에서는:
+                - nexacro.HttpService를 사용하여 서버와 통신
+                - JSON 형태의 데이터 주고받기
+                - RESTful API 연동
+                - 실시간 데이터 동기화
+                
+                이제 더 복잡한 데이터 처리와 서버 연동을 할 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>

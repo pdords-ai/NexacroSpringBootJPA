@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexacro 고급 기능 - 차트와 그래프</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 차트와 그래프 예제 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 다양한 차트 타입 (막대, 선, 원형, 영역)
+            2. 차트 데이터 바인딩
+            3. 차트 스타일링과 커스터마이징
+            4. 인터랙티브 차트 (클릭, 호버)
+            5. 실시간 데이터 업데이트
+            6. 차트 내보내기
+        */
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 데이터셋 설정 =====
+            */
+            var salesDataset = new nexacro.Dataset("salesDataset");
+            salesDataset.addColumn("month", "string");      // 월
+            salesDataset.addColumn("sales", "number");      // 매출
+            salesDataset.addColumn("profit", "number");     // 이익
+            salesDataset.addColumn("cost", "number");       // 비용
+            
+            // 샘플 데이터
+            var monthlyData = [
+                {month: "1월", sales: 12000000, profit: 3000000, cost: 9000000},
+                {month: "2월", sales: 15000000, profit: 4000000, cost: 11000000},
+                {month: "3월", sales: 18000000, profit: 5000000, cost: 13000000},
+                {month: "4월", sales: 16000000, profit: 4500000, cost: 11500000},
+                {month: "5월", sales: 20000000, profit: 6000000, cost: 14000000},
+                {month: "6월", sales: 22000000, profit: 7000000, cost: 15000000},
+                {month: "7월", sales: 19000000, profit: 5500000, cost: 13500000},
+                {month: "8월", sales: 21000000, profit: 6500000, cost: 14500000},
+                {month: "9월", sales: 23000000, profit: 7500000, cost: 15500000},
+                {month: "10월", sales: 25000000, profit: 8000000, cost: 17000000},
+                {month: "11월", sales: 24000000, profit: 7800000, cost: 16200000},
+                {month: "12월", sales: 28000000, profit: 9000000, cost: 19000000}
+            ];
+            
+            for (var i = 0; i < monthlyData.length; i++) {
+                var data = monthlyData[i];
+                var newRow = salesDataset.addRow();
+                salesDataset.setCellData(newRow, "month", data.month);
+                salesDataset.setCellData(newRow, "sales", data.sales);
+                salesDataset.setCellData(newRow, "profit", data.profit);
+                salesDataset.setCellData(newRow, "cost", data.cost);
+            }
+            
+            // 카테고리별 데이터셋
+            var categoryDataset = new nexacro.Dataset("categoryDataset");
+            categoryDataset.addColumn("category", "string");
+            categoryDataset.addColumn("sales", "number");
+            categoryDataset.addColumn("percentage", "number");
+            
+            var categoryData = [
+                {category: "전자제품", sales: 45000000, percentage: 35},
+                {category: "가구", sales: 32000000, percentage: 25},
+                {category: "의류", sales: 28000000, percentage: 22},
+                {category: "식품", sales: 18000000, percentage: 14},
+                {category: "기타", sales: 5000000, percentage: 4}
+            ];
+            
+            for (var i = 0; i < categoryData.length; i++) {
+                var data = categoryData[i];
+                var newRow = categoryDataset.addRow();
+                categoryDataset.setCellData(newRow, "category", data.category);
+                categoryDataset.setCellData(newRow, "sales", data.sales);
+                categoryDataset.setCellData(newRow, "percentage", data.percentage);
+            }
+            
+            /*
+                ===== 2단계: UI 컴포넌트들 만들기 =====
+            */
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("차트와 그래프 - 매출 분석 대시보드");
+            titleLabel.set_left(50);
+            titleLabel.set_top(20);
+            titleLabel.set_width(800);
+            titleLabel.set_height(40);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("darkblue");
+            titleLabel.set_background("lightblue");
+            
+            // 차트 타입 선택
+            var chartTypeLabel = new nexacro.Label("chartTypeLabel");
+            chartTypeLabel.set_text("차트 타입:");
+            chartTypeLabel.set_left(50);
+            chartTypeLabel.set_top(70);
+            chartTypeLabel.set_width(80);
+            chartTypeLabel.set_height(25);
+            
+            var chartTypeCombo = new nexacro.ComboBox("chartTypeCombo");
+            chartTypeCombo.set_left(140);
+            chartTypeCombo.set_top(70);
+            chartTypeCombo.set_width(120);
+            chartTypeCombo.set_height(25);
+            chartTypeCombo.addItem("막대 차트", "bar");
+            chartTypeCombo.addItem("선 차트", "line");
+            chartTypeCombo.addItem("영역 차트", "area");
+            chartTypeCombo.addItem("원형 차트", "pie");
+            chartTypeCombo.set_text("막대 차트");
+            
+            // 데이터 타입 선택
+            var dataTypeLabel = new nexacro.Label("dataTypeLabel");
+            dataTypeLabel.set_text("데이터 타입:");
+            dataTypeLabel.set_left(280);
+            dataTypeLabel.set_top(70);
+            dataTypeLabel.set_width(80);
+            dataTypeLabel.set_height(25);
+            
+            var dataTypeCombo = new nexacro.ComboBox("dataTypeCombo");
+            dataTypeCombo.set_left(370);
+            dataTypeCombo.set_top(70);
+            dataTypeCombo.set_width(120);
+            dataTypeCombo.set_height(25);
+            dataTypeCombo.addItem("월별 매출", "monthly");
+            dataTypeCombo.addItem("카테고리별", "category");
+            dataTypeCombo.set_text("월별 매출");
+            
+            // 차트 업데이트 버튼
+            var updateChartButton = new nexacro.Button("updateChartButton");
+            updateChartButton.set_text("차트 업데이트");
+            updateChartButton.set_left(510);
+            updateChartButton.set_top(70);
+            updateChartButton.set_width(120);
+            updateChartButton.set_height(25);
+            updateChartButton.set_background("lightgreen");
+            
+            // 실시간 업데이트 버튼
+            var realtimeButton = new nexacro.Button("realtimeButton");
+            realtimeButton.set_text("실시간 시작");
+            realtimeButton.set_left(640);
+            realtimeButton.set_top(70);
+            realtimeButton.set_width(120);
+            realtimeButton.set_height(25);
+            realtimeButton.set_background("lightblue");
+            
+            // 차트 컨테이너
+            var chartContainer = new nexacro.Container("chartContainer");
+            chartContainer.set_left(50);
+            chartContainer.set_top(110);
+            chartContainer.set_width(800);
+            chartContainer.set_height(400);
+            chartContainer.set_background("white");
+            chartContainer.set_border("2px solid #ccc");
+            
+            // 차트 제목
+            var chartTitle = new nexacro.Label("chartTitle");
+            chartTitle.set_text("월별 매출 현황");
+            chartTitle.set_left(20);
+            chartTitle.set_top(20);
+            chartTitle.set_width(760);
+            chartTitle.set_height(30);
+            chartTitle.set_font("bold 16px Arial");
+            chartTitle.set_color("darkblue");
+            chartTitle.set_background("lightgray");
+            
+            // 차트 영역 (시뮬레이션)
+            var chartArea = new nexacro.Label("chartArea");
+            chartArea.set_text("차트가 여기에 표시됩니다");
+            chartArea.set_left(20);
+            chartArea.set_top(60);
+            chartArea.set_width(760);
+            chartArea.set_height(320);
+            chartArea.set_background("lightyellow");
+            chartArea.set_border("1px solid #ccc");
+            chartArea.set_font("14px Arial");
+            
+            // 통계 정보
+            var statsContainer = new nexacro.Container("statsContainer");
+            statsContainer.set_left(870);
+            statsContainer.set_top(110);
+            statsContainer.set_width(300);
+            statsContainer.set_height(400);
+            statsContainer.set_background("lightgray");
+            statsContainer.set_border("2px solid #ccc");
+            
+            var statsTitle = new nexacro.Label("statsTitle");
+            statsTitle.set_text("통계 정보");
+            statsTitle.set_left(10);
+            statsTitle.set_top(10);
+            statsTitle.set_width(280);
+            statsTitle.set_height(30);
+            statsTitle.set_font("bold 14px Arial");
+            statsTitle.set_background("darkgray");
+            statsTitle.set_color("white");
+            
+            var statsLabel = new nexacro.Label("statsLabel");
+            statsLabel.set_text("통계 정보가 여기에 표시됩니다");
+            statsLabel.set_left(10);
+            statsLabel.set_top(50);
+            statsLabel.set_width(280);
+            statsLabel.set_height(340);
+            statsLabel.set_background("white");
+            statsLabel.set_border("1px solid #ccc");
+            statsLabel.set_font("12px Arial");
+            
+            // 컨트롤 패널
+            var controlPanel = new nexacro.Container("controlPanel");
+            controlPanel.set_left(50);
+            controlPanel.set_top(520);
+            controlPanel.set_width(800);
+            controlPanel.set_height(80);
+            controlPanel.set_background("lightcyan");
+            controlPanel.set_border("1px solid #ccc");
+            
+            var controlTitle = new nexacro.Label("controlTitle");
+            controlTitle.set_text("차트 컨트롤");
+            controlTitle.set_left(10);
+            controlTitle.set_top(10);
+            controlTitle.set_width(780);
+            controlTitle.set_height(20);
+            controlTitle.set_font("bold 12px Arial");
+            
+            // 컨트롤 버튼들
+            var exportButton = new nexacro.Button("exportButton");
+            exportButton.set_text("차트 내보내기");
+            exportButton.set_left(10);
+            exportButton.set_top(35);
+            exportButton.set_width(120);
+            exportButton.set_height(30);
+            exportButton.set_background("lightgreen");
+            
+            var printButton = new nexacro.Button("printButton");
+            printButton.set_text("인쇄");
+            printButton.set_left(140);
+            printButton.set_top(35);
+            printButton.set_width(80);
+            printButton.set_height(30);
+            printButton.set_background("lightblue");
+            
+            var fullscreenButton = new nexacro.Button("fullscreenButton");
+            fullscreenButton.set_text("전체화면");
+            fullscreenButton.set_left(230);
+            fullscreenButton.set_top(35);
+            fullscreenButton.set_width(100);
+            fullscreenButton.set_height(30);
+            fullscreenButton.set_background("lightyellow");
+            
+            var resetButton = new nexacro.Button("resetButton");
+            resetButton.set_text("초기화");
+            resetButton.set_left(340);
+            resetButton.set_top(35);
+            resetButton.set_width(80);
+            resetButton.set_height(30);
+            resetButton.set_background("lightcoral");
+            
+            /*
+                ===== 3단계: 차트 생성 함수들 =====
+            */
+            
+            var currentChartType = "bar";
+            var currentDataType = "monthly";
+            var isRealtimeActive = false;
+            var realtimeInterval;
+            
+            /*
+                막대 차트 생성
+            */
+            function createBarChart() {
+                var chartText = "📊 막대 차트\n\n";
+                
+                if (currentDataType === "monthly") {
+                    chartText += "월별 매출 현황 (단위: 천만원)\n";
+                    chartText += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                    
+                    var maxSales = 0;
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var sales = salesDataset.getCellData(i, "sales");
+                        if (sales > maxSales) maxSales = sales;
+                    }
+                    
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var month = salesDataset.getCellData(i, "sales");
+                        var sales = salesDataset.getCellData(i, "sales");
+                        var barLength = Math.round((sales / maxSales) * 30);
+                        var bar = "█".repeat(barLength);
+                        chartText += month + ": " + bar + " " + (sales / 10000000).toFixed(1) + "천만원\n";
+                    }
+                } else {
+                    chartText += "카테고리별 매출 현황 (단위: 천만원)\n";
+                    chartText += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                    
+                    var maxSales = 0;
+                    for (var i = 0; i < categoryDataset.getRowCount(); i++) {
+                        var sales = categoryDataset.getCellData(i, "sales");
+                        if (sales > maxSales) maxSales = sales;
+                    }
+                    
+                    for (var i = 0; i < categoryDataset.getRowCount(); i++) {
+                        var category = categoryDataset.getCellData(i, "category");
+                        var sales = categoryDataset.getCellData(i, "sales");
+                        var barLength = Math.round((sales / maxSales) * 30);
+                        var bar = "█".repeat(barLength);
+                        chartText += category + ": " + bar + " " + (sales / 10000000).toFixed(1) + "천만원\n";
+                    }
+                }
+                
+                chartArea.set_text(chartText);
+            }
+            
+            /*
+                선 차트 생성
+            */
+            function createLineChart() {
+                var chartText = "📈 선 차트\n\n";
+                
+                if (currentDataType === "monthly") {
+                    chartText += "월별 매출 추이 (단위: 천만원)\n";
+                    chartText += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                    
+                    var maxSales = 0;
+                    var minSales = Infinity;
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var sales = salesDataset.getCellData(i, "sales");
+                        if (sales > maxSales) maxSales = sales;
+                        if (sales < minSales) minSales = sales;
+                    }
+                    
+                    var range = maxSales - minSales;
+                    var levels = 10;
+                    
+                    for (var level = levels; level >= 0; level--) {
+                        var value = minSales + (range * level / levels);
+                        chartText += (value / 10000000).toFixed(1).padStart(6) + " │";
+                        
+                        for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                            var sales = salesDataset.getCellData(i, "sales");
+                            var month = salesDataset.getCellData(i, "month");
+                            var normalizedValue = (sales - minSales) / range;
+                            var normalizedLevel = level / levels;
+                            
+                            if (Math.abs(normalizedValue - normalizedLevel) < 0.1) {
+                                chartText += " ●";
+                            } else {
+                                chartText += "  ";
+                            }
+                        }
+                        chartText += "\n";
+                    }
+                    
+                    chartText += "       └";
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        chartText += "──";
+                    }
+                    chartText += "\n       ";
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var month = salesDataset.getCellData(i, "month");
+                        chartText += month;
+                    }
+                }
+                
+                chartArea.set_text(chartText);
+            }
+            
+            /*
+                원형 차트 생성
+            */
+            function createPieChart() {
+                var chartText = "🥧 원형 차트\n\n";
+                
+                if (currentDataType === "category") {
+                    chartText += "카테고리별 매출 비율\n";
+                    chartText += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                    
+                    var totalSales = 0;
+                    for (var i = 0; i < categoryDataset.getRowCount(); i++) {
+                        totalSales += categoryDataset.getCellData(i, "sales");
+                    }
+                    
+                    for (var i = 0; i < categoryDataset.getRowCount(); i++) {
+                        var category = categoryDataset.getCellData(i, "category");
+                        var sales = categoryDataset.getCellData(i, "sales");
+                        var percentage = (sales / totalSales) * 100;
+                        var pieSlice = "●".repeat(Math.round(percentage / 5));
+                        chartText += category + ": " + pieSlice + " " + percentage.toFixed(1) + "%\n";
+                    }
+                } else {
+                    chartText += "원형 차트는 카테고리별 데이터에만 사용 가능합니다.\n";
+                    chartText += "데이터 타입을 '카테고리별'로 변경해주세요.";
+                }
+                
+                chartArea.set_text(chartText);
+            }
+            
+            /*
+                영역 차트 생성
+            */
+            function createAreaChart() {
+                var chartText = "📊 영역 차트\n\n";
+                
+                if (currentDataType === "monthly") {
+                    chartText += "월별 매출과 이익 영역 (단위: 천만원)\n";
+                    chartText += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                    
+                    var maxValue = 0;
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var sales = salesDataset.getCellData(i, "sales");
+                        var profit = salesDataset.getCellData(i, "profit");
+                        if (sales > maxValue) maxValue = sales;
+                        if (profit > maxValue) maxValue = profit;
+                    }
+                    
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var month = salesDataset.getCellData(i, "month");
+                        var sales = salesDataset.getCellData(i, "sales");
+                        var profit = salesDataset.getCellData(i, "profit");
+                        
+                        var salesBar = "█".repeat(Math.round((sales / maxValue) * 20));
+                        var profitBar = "▓".repeat(Math.round((profit / maxValue) * 20));
+                        
+                        chartText += month + ":\n";
+                        chartText += "  매출: " + salesBar + " " + (sales / 10000000).toFixed(1) + "천만원\n";
+                        chartText += "  이익: " + profitBar + " " + (profit / 10000000).toFixed(1) + "천만원\n\n";
+                    }
+                }
+                
+                chartArea.set_text(chartText);
+            }
+            
+            /*
+                차트 업데이트
+            */
+            function updateChart() {
+                currentChartType = chartTypeCombo.get_text();
+                currentDataType = dataTypeCombo.get_text();
+                
+                switch (currentChartType) {
+                    case "막대 차트":
+                        createBarChart();
+                        break;
+                    case "선 차트":
+                        createLineChart();
+                        break;
+                    case "원형 차트":
+                        createPieChart();
+                        break;
+                    case "영역 차트":
+                        createAreaChart();
+                        break;
+                }
+                
+                updateStatistics();
+            }
+            
+            /*
+                통계 정보 업데이트
+            */
+            function updateStatistics() {
+                var statsText = "";
+                
+                if (currentDataType === "monthly") {
+                    var totalSales = 0;
+                    var totalProfit = 0;
+                    var maxSales = 0;
+                    var minSales = Infinity;
+                    var maxMonth = "";
+                    var minMonth = "";
+                    
+                    for (var i = 0; i < salesDataset.getRowCount(); i++) {
+                        var sales = salesDataset.getCellData(i, "sales");
+                        var profit = salesDataset.getCellData(i, "profit");
+                        var month = salesDataset.getCellData(i, "month");
+                        
+                        totalSales += sales;
+                        totalProfit += profit;
+                        
+                        if (sales > maxSales) {
+                            maxSales = sales;
+                            maxMonth = month;
+                        }
+                        if (sales < minSales) {
+                            minSales = sales;
+                            minMonth = month;
+                        }
+                    }
+                    
+                    statsText = "📊 월별 매출 통계\n\n";
+                    statsText += "총 매출: " + (totalSales / 100000000).toFixed(1) + "억원\n";
+                    statsText += "총 이익: " + (totalProfit / 100000000).toFixed(1) + "억원\n";
+                    statsText += "평균 매출: " + (totalSales / salesDataset.getRowCount() / 10000000).toFixed(1) + "천만원\n";
+                    statsText += "이익률: " + ((totalProfit / totalSales) * 100).toFixed(1) + "%\n\n";
+                    statsText += "최고 매출: " + maxMonth + " (" + (maxSales / 10000000).toFixed(1) + "천만원)\n";
+                    statsText += "최저 매출: " + minMonth + " (" + (minSales / 10000000).toFixed(1) + "천만원)\n";
+                } else {
+                    var totalSales = 0;
+                    var maxCategory = "";
+                    var maxSales = 0;
+                    
+                    for (var i = 0; i < categoryDataset.getRowCount(); i++) {
+                        var sales = categoryDataset.getCellData(i, "sales");
+                        var category = categoryDataset.getCellData(i, "category");
+                        
+                        totalSales += sales;
+                        
+                        if (sales > maxSales) {
+                            maxSales = sales;
+                            maxCategory = category;
+                        }
+                    }
+                    
+                    statsText = "📊 카테고리별 통계\n\n";
+                    statsText += "총 매출: " + (totalSales / 100000000).toFixed(1) + "억원\n";
+                    statsText += "평균 매출: " + (totalSales / categoryDataset.getRowCount() / 10000000).toFixed(1) + "천만원\n\n";
+                    statsText += "최고 매출 카테고리: " + maxCategory + "\n";
+                    statsText += "(" + (maxSales / 10000000).toFixed(1) + "천만원)\n\n";
+                    
+                    statsText += "카테고리별 비율:\n";
+                    for (var i = 0; i < categoryDataset.getRowCount(); i++) {
+                        var category = categoryDataset.getCellData(i, "category");
+                        var sales = categoryDataset.getCellData(i, "sales");
+                        var percentage = (sales / totalSales) * 100;
+                        statsText += "• " + category + ": " + percentage.toFixed(1) + "%\n";
+                    }
+                }
+                
+                statsLabel.set_text(statsText);
+            }
+            
+            /*
+                실시간 업데이트
+            */
+            function toggleRealtime() {
+                if (isRealtimeActive) {
+                    clearInterval(realtimeInterval);
+                    realtimeButton.set_text("실시간 시작");
+                    realtimeButton.set_background("lightblue");
+                    isRealtimeActive = false;
+                } else {
+                    realtimeInterval = setInterval(function() {
+                        // 랜덤하게 데이터 업데이트
+                        var randomRow = Math.floor(Math.random() * salesDataset.getRowCount());
+                        var currentSales = salesDataset.getCellData(randomRow, "sales");
+                        var newSales = currentSales + (Math.random() - 0.5) * 1000000;
+                        salesDataset.setCellData(randomRow, "sales", Math.max(0, newSales));
+                        
+                        updateChart();
+                    }, 2000);
+                    
+                    realtimeButton.set_text("실시간 중지");
+                    realtimeButton.set_background("lightcoral");
+                    isRealtimeActive = true;
+                }
+            }
+            
+            /*
+                ===== 4단계: 이벤트 핸들러 연결 =====
+            */
+            
+            updateChartButton.addEventHandler("onclick", function() {
+                updateChart();
+            });
+            
+            realtimeButton.addEventHandler("onclick", function() {
+                toggleRealtime();
+            });
+            
+            exportButton.addEventHandler("onclick", function() {
+                var chartData = "차트 데이터 내보내기\n\n";
+                chartData += "차트 타입: " + currentChartType + "\n";
+                chartData += "데이터 타입: " + currentDataType + "\n";
+                chartData += "생성 시간: " + new Date().toLocaleString() + "\n\n";
+                chartData += chartArea.get_text();
+                
+                alert("차트 데이터가 생성되었습니다!\n\n" + chartData);
+            });
+            
+            printButton.addEventHandler("onclick", function() {
+                alert("인쇄 기능이 실행됩니다.\n(실제로는 window.print()를 호출합니다)");
+            });
+            
+            fullscreenButton.addEventHandler("onclick", function() {
+                alert("전체화면 모드가 실행됩니다.\n(실제로는 차트를 전체화면으로 표시합니다)");
+            });
+            
+            resetButton.addEventHandler("onclick", function() {
+                if (confirm("차트를 초기 상태로 되돌리시겠습니까?")) {
+                    chartTypeCombo.set_text("막대 차트");
+                    dataTypeCombo.set_text("월별 매출");
+                    updateChart();
+                }
+            });
+            
+            /*
+                ===== 5단계: 초기 설정 =====
+            */
+            updateChart();
+            
+            /*
+                ===== 6단계: 모든 컴포넌트를 화면에 추가 =====
+            */
+            this.add(titleLabel);
+            this.add(chartTypeLabel);
+            this.add(chartTypeCombo);
+            this.add(dataTypeLabel);
+            this.add(dataTypeCombo);
+            this.add(updateChartButton);
+            this.add(realtimeButton);
+            this.add(chartContainer);
+            this.add(chartTitle);
+            this.add(chartArea);
+            this.add(statsContainer);
+            this.add(statsTitle);
+            this.add(statsLabel);
+            this.add(controlPanel);
+            this.add(controlTitle);
+            this.add(exportButton);
+            this.add(printButton);
+            this.add(fullscreenButton);
+            this.add(resetButton);
+            
+            /*
+                ===== 정리 =====
+                이 예제에서 배운 차트와 그래프 기능들:
+                
+                1. 다양한 차트 타입:
+                   - 막대 차트 (데이터 비교)
+                   - 선 차트 (추이 분석)
+                   - 원형 차트 (비율 표시)
+                   - 영역 차트 (누적 데이터)
+                
+                2. 데이터 바인딩:
+                   - 데이터셋과 차트 연결
+                   - 실시간 데이터 업데이트
+                   - 동적 차트 생성
+                
+                3. 인터랙티브 기능:
+                   - 차트 타입 변경
+                   - 데이터 타입 전환
+                   - 실시간 업데이트
+                   - 차트 내보내기
+                
+                4. 시각화 기법:
+                   - 텍스트 기반 차트 (ASCII Art)
+                   - 색상과 스타일링
+                   - 통계 정보 표시
+                   - 사용자 친화적 인터페이스
+                
+                5. 고급 기능:
+                   - 실시간 데이터 스트리밍
+                   - 차트 내보내기
+                   - 전체화면 모드
+                   - 인쇄 기능
+                
+                실제 프로젝트에서는:
+                - Chart.js, D3.js 등 전문 차트 라이브러리 사용
+                - SVG나 Canvas를 이용한 고품질 차트
+                - 애니메이션과 인터랙션
+                - 서버와의 실시간 데이터 연동
+                
+                이제 데이터 시각화의 기초를 다질 수 있습니다!
+            */
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# Spring Boot 설정 파일
+# 이 파일은 데이터베이스 연결, 서버 포트 등 애플리케이션 설정을 담고 있습니다
+
+server:
+  port: 8080  # 서버 포트 (Nexacro에서 localhost:8080으로 접근)
+
+spring:
+  # 데이터베이스 설정
+  datasource:
+    # H2 데이터베이스 (개발용 - 메모리에 저장)
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+    # MySQL 데이터베이스 (운영용 - 주석 해제하여 사용)
+    # url: jdbc:mysql://localhost:3306/nexacro_db?useSSL=false&serverTimezone=UTC
+    # driver-class-name: com.mysql.cj.jdbc.Driver
+    # username: your_username
+    # password: your_password
+
+  # JPA/Hibernate 설정
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # 애플리케이션 시작시 테이블 생성, 종료시 삭제
+    show-sql: true  # SQL 쿼리 콘솔에 출력
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect  # H2용
+        # dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL용
+        format_sql: true  # SQL 포맷팅
+
+  # H2 데이터베이스 콘솔 (개발용)
+  h2:
+    console:
+      enabled: true  # http://localhost:8080/h2-console 에서 접근 가능
+      path: /h2-console
+
+# 로깅 설정
+logging:
+  level:
+    com.nexacro: DEBUG  # 우리 패키지의 로그 레벨
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# CORS 설정 (Nexacro에서 API 호출을 위해 필요)
+cors:
+  allowed-origins: "*"  # 모든 도메인에서 접근 허용 (운영시에는 특정 도메인으로 제한)
+  allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  allowed-headers: "*"
