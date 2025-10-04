@@ -87,6 +87,15 @@
     - 데이터 시각화와 알림 시스템
     - 사용자 맞춤형 인터페이스
 
+### 실전 프로젝트 예제
+16. **[16_인사정보관리.html](16_인사정보관리.html)** - 완전한 인사정보관리 시스템
+    - Spring Boot 백엔드와 연동한 실제 CRUD 시스템
+    - 그리드를 이용한 직원 목록 관리
+    - 폼을 이용한 직원 정보 입력/수정/삭제
+    - 검색 및 필터링 기능
+    - 실시간 통계 정보 표시
+    - REST API 연동을 통한 데이터 처리
+
 ## 🚀 시작하기
 
 ### 필요한 환경
@@ -116,6 +125,10 @@
 ### 엔터프라이즈급 (11-15번 예제)
 대규모 프로젝트와 복잡한 비즈니스 로직을 다뤄보세요:
 11. 고급 그리드 기능 → 12. 차트와 그래프 → 13. 고급 폼과 마스터-디테일 → 14. 워크플로우와 상태관리 → 15. 대시보드와 KPI
+
+### 실전 프로젝트 (16번 예제)
+실제 업무에서 사용할 수 있는 완전한 시스템을 경험해보세요:
+16. 인사정보관리 시스템 (Spring Boot 백엔드 연동)
 
 ## 💡 주요 학습 포인트
 
@@ -166,6 +179,83 @@ container.set_height(600);
 container.add(button1);
 container.add(label1);
 ```
+
+## 🏢 인사정보관리 시스템 상세 가이드
+
+### 시스템 개요
+16번 예제인 인사정보관리 시스템은 실제 업무에서 사용할 수 있는 완전한 CRUD 시스템입니다. Spring Boot 백엔드와 Nexacro 프론트엔드가 연동되어 실제 데이터베이스와 통신합니다.
+
+### 주요 기능
+1. **직원 목록 관리**: 그리드를 통한 직원 정보 조회
+2. **직원 등록**: 새로운 직원 정보 입력
+3. **직원 수정**: 기존 직원 정보 업데이트
+4. **직원 삭제**: 직원 정보 삭제
+5. **검색 및 필터링**: 이름, 부서, 상태별 검색
+6. **통계 정보**: 실시간 인사 통계 표시
+
+### 백엔드 구조
+```
+src/main/java/com/nexacro/
+├── entity/Employee.java          # 직원 엔티티
+├── repository/EmployeeRepository.java  # 데이터 접근 계층
+├── service/EmployeeService.java        # 비즈니스 로직
+├── controller/EmployeeController.java  # REST API 컨트롤러
+└── config/DataInitializer.java        # 초기 데이터 설정
+```
+
+### API 엔드포인트
+- `GET /api/employees` - 전체 직원 목록 조회
+- `GET /api/employees/{id}` - 특정 직원 조회
+- `POST /api/employees` - 새 직원 등록
+- `PUT /api/employees/{id}` - 직원 정보 수정
+- `DELETE /api/employees/{id}` - 직원 삭제
+- `GET /api/employees/filter` - 조건별 검색
+- `GET /api/employees/statistics/overall` - 통계 정보
+
+### 실행 방법
+1. **백엔드 실행**:
+   ```bash
+   cd nexacro-spring-backend
+   mvn spring-boot:run
+   ```
+
+2. **프론트엔드 실행**:
+   - `16_인사정보관리.html` 파일을 브라우저에서 열기
+   - 또는 Nexacro Studio에서 실행
+
+3. **데이터 확인**:
+   - 애플리케이션 시작 시 자동으로 30명의 샘플 직원 데이터가 생성됩니다
+   - H2 데이터베이스 콘솔: http://localhost:8080/h2-console
+
+### 데이터베이스 스키마
+```sql
+CREATE TABLE employees (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_number VARCHAR(20) NOT NULL UNIQUE,
+    name VARCHAR(50) NOT NULL,
+    ssn VARCHAR(20) NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    position VARCHAR(50) NOT NULL,
+    hire_date DATE NOT NULL,
+    resignation_date DATE,
+    salary BIGINT NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    address VARCHAR(200),
+    emergency_contact VARCHAR(20),
+    emergency_relation VARCHAR(20),
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+```
+
+### 학습 포인트
+1. **REST API 연동**: XMLHttpRequest를 통한 서버 통신
+2. **데이터 바인딩**: 그리드와 폼 간의 데이터 연동
+3. **이벤트 처리**: 사용자 인터랙션에 따른 동적 처리
+4. **에러 핸들링**: API 호출 실패 시 사용자 알림
+5. **UI/UX 설계**: 직관적이고 사용하기 쉬운 인터페이스
 
 ## 🔧 문제 해결
 

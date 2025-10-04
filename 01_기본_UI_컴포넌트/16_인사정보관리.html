@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>넥사크로 인사정보관리 시스템</title>
+    <script type="text/javascript" src="http://localhost:8080/nexacro/nexacro.js"></script>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+            ===== 넥사크로 인사정보관리 시스템 =====
+            
+            이 예제에서는 다음을 배웁니다:
+            1. 그리드 컴포넌트를 이용한 직원 목록 표시
+            2. 폼 컴포넌트를 이용한 직원 정보 입력/수정
+            3. REST API 연동을 통한 CRUD 작업
+            4. 검색 및 필터링 기능
+            5. 통계 정보 표시
+        */
+        
+        // 전역 변수
+        var employeeGrid;
+        var employeeForm;
+        var searchForm;
+        var statisticsContainer;
+        var currentEmployeeId = null;
+        
+        function on_application_ready() {
+            
+            /*
+                ===== 1단계: 메인 컨테이너 만들기 =====
+                전체 화면을 감싸는 메인 컨테이너
+            */
+            var mainContainer = new nexacro.Container("mainContainer");
+            mainContainer.set_left(10);
+            mainContainer.set_top(10);
+            mainContainer.set_width(1200);
+            mainContainer.set_height(800);
+            mainContainer.set_background("#f5f5f5");
+            mainContainer.set_border("1px solid #ddd");
+            
+            /*
+                ===== 2단계: 헤더 영역 만들기 =====
+                시스템 제목과 메뉴 버튼들
+            */
+            createHeader(mainContainer);
+            
+            /*
+                ===== 3단계: 검색 영역 만들기 =====
+                직원 검색을 위한 폼
+            */
+            createSearchArea(mainContainer);
+            
+            /*
+                ===== 4단계: 그리드 영역 만들기 =====
+                직원 목록을 표시하는 그리드
+            */
+            createGridArea(mainContainer);
+            
+            /*
+                ===== 5단계: 폼 영역 만들기 =====
+                직원 정보 입력/수정을 위한 폼
+            */
+            createFormArea(mainContainer);
+            
+            /*
+                ===== 6단계: 통계 영역 만들기 =====
+                인사 통계 정보 표시
+            */
+            createStatisticsArea(mainContainer);
+            
+            // 초기 데이터 로드
+            loadEmployeeList();
+            loadStatistics();
+        }
+        
+        /*
+            ===== 헤더 영역 생성 =====
+        */
+        function createHeader(parent) {
+            var headerContainer = new nexacro.Container("headerContainer");
+            headerContainer.set_left(20);
+            headerContainer.set_top(20);
+            headerContainer.set_width(1160);
+            headerContainer.set_height(60);
+            headerContainer.set_background("linear-gradient(135deg, #667eea 0%, #764ba2 100%)");
+            headerContainer.set_border("1px solid #333");
+            
+            // 제목
+            var titleLabel = new nexacro.Label("titleLabel");
+            titleLabel.set_text("인사정보관리 시스템");
+            titleLabel.set_left(20);
+            titleLabel.set_top(15);
+            titleLabel.set_width(300);
+            titleLabel.set_height(30);
+            titleLabel.set_font("bold 18px Arial");
+            titleLabel.set_color("white");
+            parent.addChild(headerContainer);
+            headerContainer.addChild(titleLabel);
+            
+            // 새 직원 등록 버튼
+            var newEmployeeBtn = new nexacro.Button("newEmployeeBtn");
+            newEmployeeBtn.set_text("새 직원 등록");
+            newEmployeeBtn.set_left(900);
+            newEmployeeBtn.set_top(15);
+            newEmployeeBtn.set_width(100);
+            newEmployeeBtn.set_height(30);
+            newEmployeeBtn.set_background("#4CAF50");
+            newEmployeeBtn.set_color("white");
+            newEmployeeBtn.set_border("1px solid #45a049");
+            newEmployeeBtn.onclick = function() {
+                clearForm();
+                showForm();
+            };
+            headerContainer.addChild(newEmployeeBtn);
+            
+            // 통계 새로고침 버튼
+            var refreshBtn = new nexacro.Button("refreshBtn");
+            refreshBtn.set_text("통계 새로고침");
+            refreshBtn.set_left(1010);
+            refreshBtn.set_top(15);
+            refreshBtn.set_width(100);
+            refreshBtn.set_height(30);
+            refreshBtn.set_background("#2196F3");
+            refreshBtn.set_color("white");
+            refreshBtn.set_border("1px solid #1976D2");
+            refreshBtn.onclick = function() {
+                loadStatistics();
+            };
+            headerContainer.addChild(refreshBtn);
+        }
+        
+        /*
+            ===== 검색 영역 생성 =====
+        */
+        function createSearchArea(parent) {
+            var searchContainer = new nexacro.Container("searchContainer");
+            searchContainer.set_left(20);
+            searchContainer.set_top(100);
+            searchContainer.set_width(1160);
+            searchContainer.set_height(80);
+            searchContainer.set_background("white");
+            searchContainer.set_border("1px solid #ddd");
+            
+            // 검색 폼 라벨들
+            var nameLabel = new nexacro.Label("nameLabel");
+            nameLabel.set_text("이름:");
+            nameLabel.set_left(20);
+            nameLabel.set_top(15);
+            nameLabel.set_width(50);
+            nameLabel.set_height(20);
+            searchContainer.addChild(nameLabel);
+            
+            var nameEdit = new nexacro.Edit("nameEdit");
+            nameEdit.set_left(80);
+            nameEdit.set_top(12);
+            nameEdit.set_width(100);
+            nameEdit.set_height(25);
+            searchContainer.addChild(nameEdit);
+            
+            var deptLabel = new nexacro.Label("deptLabel");
+            deptLabel.set_text("부서:");
+            deptLabel.set_left(200);
+            deptLabel.set_top(15);
+            deptLabel.set_width(50);
+            deptLabel.set_height(20);
+            searchContainer.addChild(deptLabel);
+            
+            var deptCombo = new nexacro.Combo("deptCombo");
+            deptCombo.set_left(260);
+            deptCombo.set_top(12);
+            deptCombo.set_width(100);
+            deptCombo.set_height(25);
+            deptCombo.addItem("전체", "");
+            deptCombo.addItem("개발팀", "개발팀");
+            deptCombo.addItem("마케팅팀", "마케팅팀");
+            deptCombo.addItem("영업팀", "영업팀");
+            deptCombo.addItem("인사팀", "인사팀");
+            deptCombo.addItem("재무팀", "재무팀");
+            searchContainer.addChild(deptCombo);
+            
+            var statusLabel = new nexacro.Label("statusLabel");
+            statusLabel.set_text("상태:");
+            statusLabel.set_left(380);
+            statusLabel.set_top(15);
+            statusLabel.set_width(50);
+            statusLabel.set_height(20);
+            searchContainer.addChild(statusLabel);
+            
+            var statusCombo = new nexacro.Combo("statusCombo");
+            statusCombo.set_left(440);
+            statusCombo.set_top(12);
+            statusCombo.set_width(100);
+            statusCombo.set_height(25);
+            statusCombo.addItem("전체", "");
+            statusCombo.addItem("재직", "재직");
+            statusCombo.addItem("휴직", "휴직");
+            statusCombo.addItem("퇴직", "퇴직");
+            searchContainer.addChild(statusCombo);
+            
+            // 검색 버튼
+            var searchBtn = new nexacro.Button("searchBtn");
+            searchBtn.set_text("검색");
+            searchBtn.set_left(560);
+            searchBtn.set_top(12);
+            searchBtn.set_width(80);
+            searchBtn.set_height(25);
+            searchBtn.set_background("#FF9800");
+            searchBtn.set_color("white");
+            searchBtn.set_border("1px solid #F57C00");
+            searchBtn.onclick = function() {
+                searchEmployees();
+            };
+            searchContainer.addChild(searchBtn);
+            
+            // 전체 조회 버튼
+            var allBtn = new nexacro.Button("allBtn");
+            allBtn.set_text("전체 조회");
+            allBtn.set_left(650);
+            allBtn.set_top(12);
+            allBtn.set_width(80);
+            allBtn.set_height(25);
+            allBtn.set_background("#9C27B0");
+            allBtn.set_color("white");
+            allBtn.set_border("1px solid #7B1FA2");
+            allBtn.onclick = function() {
+                loadEmployeeList();
+            };
+            searchContainer.addChild(allBtn);
+            
+            parent.addChild(searchContainer);
+        }
+        
+        /*
+            ===== 그리드 영역 생성 =====
+        */
+        function createGridArea(parent) {
+            var gridContainer = new nexacro.Container("gridContainer");
+            gridContainer.set_left(20);
+            gridContainer.set_top(200);
+            gridContainer.set_width(700);
+            gridContainer.set_height(400);
+            gridContainer.set_background("white");
+            gridContainer.set_border("1px solid #ddd");
+            
+            // 그리드 라벨
+            var gridLabel = new nexacro.Label("gridLabel");
+            gridLabel.set_text("직원 목록");
+            gridLabel.set_left(10);
+            gridLabel.set_top(5);
+            gridLabel.set_width(100);
+            gridLabel.set_height(20);
+            gridLabel.set_font("bold 14px Arial");
+            gridContainer.addChild(gridLabel);
+            
+            // 그리드 생성
+            employeeGrid = new nexacro.Grid("employeeGrid");
+            employeeGrid.set_left(10);
+            employeeGrid.set_top(30);
+            employeeGrid.set_width(680);
+            employeeGrid.set_height(360);
+            employeeGrid.set_border("1px solid #ccc");
+            
+            // 그리드 컬럼 설정
+            employeeGrid.addColumn("id", "ID", 50, "number");
+            employeeGrid.addColumn("employeeNumber", "사번", 80, "string");
+            employeeGrid.addColumn("name", "이름", 80, "string");
+            employeeGrid.addColumn("department", "부서", 80, "string");
+            employeeGrid.addColumn("position", "직급", 80, "string");
+            employeeGrid.addColumn("hireDate", "입사일", 100, "date");
+            employeeGrid.addColumn("salary", "급여", 100, "number");
+            employeeGrid.addColumn("status", "상태", 60, "string");
+            
+            // 그리드 이벤트 설정
+            employeeGrid.oncellclick = function(obj) {
+                if (obj.cellindex == 0) { // ID 컬럼 클릭 시
+                    var rowIndex = obj.rowindex;
+                    var employeeId = employeeGrid.getCellData(rowIndex, 0);
+                    loadEmployeeDetail(employeeId);
+                }
+            };
+            
+            gridContainer.addChild(employeeGrid);
+            parent.addChild(gridContainer);
+        }
+        
+        /*
+            ===== 폼 영역 생성 =====
+        */
+        function createFormArea(parent) {
+            var formContainer = new nexacro.Container("formContainer");
+            formContainer.set_left(740);
+            formContainer.set_top(200);
+            formContainer.set_width(440);
+            formContainer.set_height(400);
+            formContainer.set_background("white");
+            formContainer.set_border("1px solid #ddd");
+            
+            // 폼 라벨
+            var formLabel = new nexacro.Label("formLabel");
+            formLabel.set_text("직원 정보");
+            formLabel.set_left(10);
+            formLabel.set_top(5);
+            formLabel.set_width(100);
+            formLabel.set_height(20);
+            formLabel.set_font("bold 14px Arial");
+            formContainer.addChild(formLabel);
+            
+            // 폼 필드들
+            var fields = [
+                {name: "employeeNumber", label: "사번:", left: 20, top: 40, width: 180},
+                {name: "name", label: "이름:", left: 220, top: 40, width: 180},
+                {name: "ssn", label: "주민번호:", left: 20, top: 80, width: 180},
+                {name: "department", label: "부서:", left: 220, top: 80, width: 180},
+                {name: "position", label: "직급:", left: 20, top: 120, width: 180},
+                {name: "hireDate", label: "입사일:", left: 220, top: 120, width: 180},
+                {name: "salary", label: "급여:", left: 20, top: 160, width: 180},
+                {name: "email", label: "이메일:", left: 220, top: 160, width: 180},
+                {name: "phone", label: "전화번호:", left: 20, top: 200, width: 180},
+                {name: "address", label: "주소:", left: 20, top: 240, width: 380},
+                {name: "emergencyContact", label: "긴급연락처:", left: 20, top: 280, width: 180},
+                {name: "emergencyRelation", label: "관계:", left: 220, top: 280, width: 180},
+                {name: "status", label: "상태:", left: 20, top: 320, width: 180}
+            ];
+            
+            employeeForm = {};
+            
+            fields.forEach(function(field) {
+                // 라벨
+                var label = new nexacro.Label(field.name + "Label");
+                label.set_text(field.label);
+                label.set_left(field.left);
+                label.set_top(field.top - 20);
+                label.set_width(80);
+                label.set_height(20);
+                formContainer.addChild(label);
+                
+                // 입력 필드
+                var input;
+                if (field.name === "hireDate") {
+                    input = new nexacro.Calendar(field.name + "Input");
+                } else if (field.name === "department" || field.name === "position" || field.name === "status") {
+                    input = new nexacro.Combo(field.name + "Input");
+                    if (field.name === "department") {
+                        input.addItem("개발팀", "개발팀");
+                        input.addItem("마케팅팀", "마케팅팀");
+                        input.addItem("영업팀", "영업팀");
+                        input.addItem("인사팀", "인사팀");
+                        input.addItem("재무팀", "재무팀");
+                    } else if (field.name === "position") {
+                        input.addItem("사원", "사원");
+                        input.addItem("대리", "대리");
+                        input.addItem("과장", "과장");
+                        input.addItem("차장", "차장");
+                        input.addItem("부장", "부장");
+                        input.addItem("이사", "이사");
+                    } else if (field.name === "status") {
+                        input.addItem("재직", "재직");
+                        input.addItem("휴직", "휴직");
+                        input.addItem("퇴직", "퇴직");
+                    }
+                } else {
+                    input = new nexacro.Edit(field.name + "Input");
+                }
+                
+                input.set_left(field.left);
+                input.set_top(field.top);
+                input.set_width(field.width);
+                input.set_height(25);
+                formContainer.addChild(input);
+                
+                employeeForm[field.name] = input;
+            });
+            
+            // 버튼들
+            var saveBtn = new nexacro.Button("saveBtn");
+            saveBtn.set_text("저장");
+            saveBtn.set_left(20);
+            saveBtn.set_top(360);
+            saveBtn.set_width(80);
+            saveBtn.set_height(30);
+            saveBtn.set_background("#4CAF50");
+            saveBtn.set_color("white");
+            saveBtn.set_border("1px solid #45a049");
+            saveBtn.onclick = function() {
+                saveEmployee();
+            };
+            formContainer.addChild(saveBtn);
+            
+            var updateBtn = new nexacro.Button("updateBtn");
+            updateBtn.set_text("수정");
+            updateBtn.set_left(110);
+            updateBtn.set_top(360);
+            updateBtn.set_width(80);
+            updateBtn.set_height(30);
+            updateBtn.set_background("#FF9800");
+            updateBtn.set_color("white");
+            updateBtn.set_border("1px solid #F57C00");
+            updateBtn.onclick = function() {
+                updateEmployee();
+            };
+            formContainer.addChild(updateBtn);
+            
+            var deleteBtn = new nexacro.Button("deleteBtn");
+            deleteBtn.set_text("삭제");
+            deleteBtn.set_left(200);
+            deleteBtn.set_top(360);
+            deleteBtn.set_width(80);
+            deleteBtn.set_height(30);
+            deleteBtn.set_background("#f44336");
+            deleteBtn.set_color("white");
+            deleteBtn.set_border("1px solid #d32f2f");
+            deleteBtn.onclick = function() {
+                deleteEmployee();
+            };
+            formContainer.addChild(deleteBtn);
+            
+            var clearBtn = new nexacro.Button("clearBtn");
+            clearBtn.set_text("초기화");
+            clearBtn.set_left(290);
+            clearBtn.set_top(360);
+            clearBtn.set_width(80);
+            clearBtn.set_height(30);
+            clearBtn.set_background("#9E9E9E");
+            clearBtn.set_color("white");
+            clearBtn.set_border("1px solid #757575");
+            clearBtn.onclick = function() {
+                clearForm();
+            };
+            formContainer.addChild(clearBtn);
+            
+            parent.addChild(formContainer);
+        }
+        
+        /*
+            ===== 통계 영역 생성 =====
+        */
+        function createStatisticsArea(parent) {
+            var statsContainer = new nexacro.Container("statsContainer");
+            statsContainer.set_left(20);
+            statsContainer.set_top(620);
+            statsContainer.set_width(1160);
+            statsContainer.set_height(160);
+            statsContainer.set_background("white");
+            statsContainer.set_border("1px solid #ddd");
+            
+            // 통계 라벨
+            var statsLabel = new nexacro.Label("statsLabel");
+            statsLabel.set_text("인사 통계");
+            statsLabel.set_left(10);
+            statsLabel.set_top(5);
+            statsLabel.set_width(100);
+            statsLabel.set_height(20);
+            statsLabel.set_font("bold 14px Arial");
+            statsContainer.addChild(statsLabel);
+            
+            // 통계 정보 표시 영역
+            statisticsContainer = new nexacro.Container("statisticsContainer");
+            statisticsContainer.set_left(10);
+            statisticsContainer.set_top(30);
+            statisticsContainer.set_width(1140);
+            statisticsContainer.set_height(120);
+            statisticsContainer.set_background("#f9f9f9");
+            statisticsContainer.set_border("1px solid #eee");
+            statsContainer.addChild(statisticsContainer);
+            
+            parent.addChild(statsContainer);
+        }
+        
+        /*
+            ===== API 호출 함수들 =====
+        */
+        
+        // 직원 목록 로드
+        function loadEmployeeList() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://localhost:8080/api/employees', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var employees = JSON.parse(xhr.responseText);
+                        displayEmployeeList(employees);
+                    } else {
+                        alert('직원 목록을 불러오는데 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send();
+        }
+        
+        // 직원 검색
+        function searchEmployees() {
+            var name = nexacro.getApplication().getComponent("nameEdit").get_text();
+            var department = nexacro.getApplication().getComponent("deptCombo").get_selectedItemValue();
+            var status = nexacro.getApplication().getComponent("statusCombo").get_selectedItemValue();
+            
+            var url = 'http://localhost:8080/api/employees/filter?';
+            var params = [];
+            
+            if (name) params.push('name=' + encodeURIComponent(name));
+            if (department) params.push('department=' + encodeURIComponent(department));
+            if (status) params.push('status=' + encodeURIComponent(status));
+            
+            url += params.join('&');
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var employees = JSON.parse(xhr.responseText);
+                        displayEmployeeList(employees);
+                    } else {
+                        alert('검색에 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send();
+        }
+        
+        // 직원 상세 정보 로드
+        function loadEmployeeDetail(employeeId) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://localhost:8080/api/employees/' + employeeId, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var employee = JSON.parse(xhr.responseText);
+                        fillForm(employee);
+                        currentEmployeeId = employeeId;
+                    } else {
+                        alert('직원 정보를 불러오는데 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send();
+        }
+        
+        // 직원 저장
+        function saveEmployee() {
+            var employeeData = getFormData();
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'http://localhost:8080/api/employees', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 201) {
+                        alert('직원이 성공적으로 등록되었습니다.');
+                        clearForm();
+                        loadEmployeeList();
+                    } else {
+                        alert('직원 등록에 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send(JSON.stringify(employeeData));
+        }
+        
+        // 직원 수정
+        function updateEmployee() {
+            if (!currentEmployeeId) {
+                alert('수정할 직원을 선택해주세요.');
+                return;
+            }
+            
+            var employeeData = getFormData();
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('PUT', 'http://localhost:8080/api/employees/' + currentEmployeeId, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        alert('직원 정보가 성공적으로 수정되었습니다.');
+                        loadEmployeeList();
+                    } else {
+                        alert('직원 정보 수정에 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send(JSON.stringify(employeeData));
+        }
+        
+        // 직원 삭제
+        function deleteEmployee() {
+            if (!currentEmployeeId) {
+                alert('삭제할 직원을 선택해주세요.');
+                return;
+            }
+            
+            if (!confirm('정말로 이 직원을 삭제하시겠습니까?')) {
+                return;
+            }
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', 'http://localhost:8080/api/employees/' + currentEmployeeId, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        alert('직원이 성공적으로 삭제되었습니다.');
+                        clearForm();
+                        loadEmployeeList();
+                    } else {
+                        alert('직원 삭제에 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send();
+        }
+        
+        // 통계 로드
+        function loadStatistics() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://localhost:8080/api/employees/statistics/overall', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var stats = JSON.parse(xhr.responseText);
+                        displayStatistics(stats);
+                    } else {
+                        alert('통계 정보를 불러오는데 실패했습니다.');
+                    }
+                }
+            };
+            xhr.send();
+        }
+        
+        /*
+            ===== 유틸리티 함수들 =====
+        */
+        
+        // 직원 목록 표시
+        function displayEmployeeList(employees) {
+            employeeGrid.removeAllRows();
+            employees.forEach(function(employee) {
+                var row = employeeGrid.addRow();
+                employeeGrid.setCellData(row, 0, employee.id);
+                employeeGrid.setCellData(row, 1, employee.employeeNumber);
+                employeeGrid.setCellData(row, 2, employee.name);
+                employeeGrid.setCellData(row, 3, employee.department);
+                employeeGrid.setCellData(row, 4, employee.position);
+                employeeGrid.setCellData(row, 5, employee.hireDate);
+                employeeGrid.setCellData(row, 6, employee.salary);
+                employeeGrid.setCellData(row, 7, employee.status);
+            });
+        }
+        
+        // 폼에 데이터 채우기
+        function fillForm(employee) {
+            employeeForm.employeeNumber.set_text(employee.employeeNumber || '');
+            employeeForm.name.set_text(employee.name || '');
+            employeeForm.ssn.set_text(employee.ssn || '');
+            employeeForm.department.set_selectedItemValue(employee.department || '');
+            employeeForm.position.set_selectedItemValue(employee.position || '');
+            employeeForm.hireDate.set_text(employee.hireDate || '');
+            employeeForm.salary.set_text(employee.salary || '');
+            employeeForm.email.set_text(employee.email || '');
+            employeeForm.phone.set_text(employee.phone || '');
+            employeeForm.address.set_text(employee.address || '');
+            employeeForm.emergencyContact.set_text(employee.emergencyContact || '');
+            employeeForm.emergencyRelation.set_text(employee.emergencyRelation || '');
+            employeeForm.status.set_selectedItemValue(employee.status || '');
+        }
+        
+        // 폼에서 데이터 가져오기
+        function getFormData() {
+            return {
+                employeeNumber: employeeForm.employeeNumber.get_text(),
+                name: employeeForm.name.get_text(),
+                ssn: employeeForm.ssn.get_text(),
+                department: employeeForm.department.get_selectedItemValue(),
+                position: employeeForm.position.get_selectedItemValue(),
+                hireDate: employeeForm.hireDate.get_text(),
+                salary: parseInt(employeeForm.salary.get_text()) || 0,
+                email: employeeForm.email.get_text(),
+                phone: employeeForm.phone.get_text(),
+                address: employeeForm.address.get_text(),
+                emergencyContact: employeeForm.emergencyContact.get_text(),
+                emergencyRelation: employeeForm.emergencyRelation.get_text(),
+                status: employeeForm.status.get_selectedItemValue()
+            };
+        }
+        
+        // 폼 초기화
+        function clearForm() {
+            Object.keys(employeeForm).forEach(function(key) {
+                if (employeeForm[key].set_text) {
+                    employeeForm[key].set_text('');
+                } else if (employeeForm[key].set_selectedItemValue) {
+                    employeeForm[key].set_selectedItemValue('');
+                }
+            });
+            currentEmployeeId = null;
+        }
+        
+        // 통계 표시
+        function displayStatistics(stats) {
+            // 기존 통계 정보 제거
+            var children = statisticsContainer.getChildren();
+            for (var i = children.length - 1; i >= 0; i--) {
+                statisticsContainer.removeChild(children[i]);
+            }
+            
+            // 통계 정보 표시
+            var statsText = "전체 직원: " + stats.totalCount + "명 | " +
+                           "재직자: " + stats.activeCount + "명 | " +
+                           "퇴직자: " + stats.resignedCount + "명 | " +
+                           "평균 급여: " + Math.round(stats.averageSalary).toLocaleString() + "원 | " +
+                           "최고 급여: " + stats.maxSalary.toLocaleString() + "원 | " +
+                           "최저 급여: " + stats.minSalary.toLocaleString() + "원";
+            
+            var statsLabel = new nexacro.Label("statsDisplay");
+            statsLabel.set_text(statsText);
+            statsLabel.set_left(20);
+            statsLabel.set_top(20);
+            statsLabel.set_width(1100);
+            statsLabel.set_height(80);
+            statsLabel.set_font("14px Arial");
+            statsLabel.set_color("#333");
+            statisticsContainer.addChild(statsLabel);
+        }
+        
+        // 폼 표시
+        function showForm() {
+            // 폼이 이미 표시되어 있으므로 별도 처리 불필요
+        }
+    </script>
+</body>
+</html>
